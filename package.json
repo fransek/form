@@ -1,0 +1,77 @@
+{
+  "name": "@fransek/package-template",
+  "version": "1.1.0",
+  "type": "module",
+  "private": false,
+  "author": "Frans Ekman <fransedvinekman@gmail.com>",
+  "license": "MIT",
+  "description": "Package template for TypeScript packages",
+  "keywords": [],
+  "homepage": "https://github.com/fransek/package-template#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fransek/package-template"
+  },
+  "bugs": {
+    "url": "https://github.com/fransek/package-template/issues"
+  },
+  "files": [
+    "dist"
+  ],
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    }
+  },
+  "sideEffects": false,
+  "scripts": {
+    "build": "rollup -c",
+    "dev": "rollup -c -w",
+    "test": "vitest --run --passWithNoTests",
+    "test:watch": "vitest",
+    "coverage": "vitest --run --coverage --passWithNoTests",
+    "lint": "eslint --fix src",
+    "format": "prettier --write src",
+    "validate": "tsc --noEmit && pnpm lint && pnpm format && pnpm test",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20.3.1",
+    "@commitlint/config-conventional": "^20.3.1",
+    "@eslint/eslintrc": "^3.3.3",
+    "@eslint/js": "^9.39.2",
+    "@rollup/plugin-typescript": "^12.3.0",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^12.0.2",
+    "@types/node": "^25.0.10",
+    "@typescript-eslint/eslint-plugin": "^8.53.1",
+    "@typescript-eslint/parser": "^8.53.1",
+    "@vitest/coverage-v8": "4.0.18",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "husky": "^9.1.7",
+    "jiti": "^2.6.1",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.8.1",
+    "prettier-plugin-organize-imports": "^4.3.0",
+    "rollup": "^4.56.0",
+    "semantic-release": "^25.0.2",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "prettier --write",
+      "eslint --fix",
+      "bash -c tsc --noEmit"
+    ]
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
