@@ -44,7 +44,7 @@ export default function Home() {
           state={form.name}
           onChange={(name) => setForm((prev) => ({ ...prev, name }))}
           validateOnChange={validateName}
-          validateOnBlurAsync={validateNameAsync}
+          validateOnChangeAsync={validateNameAsync}
         >
           {({
             errorMessage,
@@ -72,7 +72,7 @@ export default function Home() {
             setForm((prev) => ({ ...prev, repeatName }))
           }
           validateOnBlur={validateRepeatName(form.name.value)}
-          validateOnChangeAsync={validateRepeatNameAsync}
+          validateOnBlurAsync={validateRepeatNameAsync}
         >
           {({
             errorMessage,

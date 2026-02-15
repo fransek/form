@@ -1,4 +1,3 @@
-"use client";
 export const validateName = (value: string) => {
   if (!value) {
     return "Name is required";

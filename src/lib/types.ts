@@ -16,14 +16,17 @@ export type SyncValidator<T> = (value: T) => React.ReactNode;
 export type AsyncValidator<T> = (value: T) => Promise<React.ReactNode>;
 export type Validator<T> = SyncValidator<T> | AsyncValidator<T>;
 
-export interface FieldProps<T> {
+export interface FieldOptions<T> {
+  validateOnChange?: SyncValidator<T>;
+  validateOnChangeAsync?: AsyncValidator<T>;
+  validateOnBlur?: SyncValidator<T>;
+  validateOnBlurAsync?: AsyncValidator<T>;
+  debounceMs?: number;
+}
+
+export interface FieldProps<T> extends FieldOptions<T> {
   state: FieldState<T>;
   onChange: (newState: FieldState<T>) => void;
   onBlur?: () => void;
-  validateOnChange?: SyncValidator<T>;
-  validateOnChangeAsync?: AsyncValidator<T>;
-  debounceMs?: number;
-  validateOnBlur?: SyncValidator<T>;
-  validateOnBlurAsync?: AsyncValidator<T>;
   children: (props: FieldRenderProps<T>) => React.ReactNode;
 }

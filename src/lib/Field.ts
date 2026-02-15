@@ -16,6 +16,10 @@ export function Field<T>({
   const validationCounterRef = useRef(0);
 
   function handleChange(value: T) {
+    if (validationTimeoutRef.current) {
+      clearTimeout(validationTimeoutRef.current);
+    }
+
     if (state.isDirty) {
       let errorMessage = validateOnChange?.(value);
       onChange({
@@ -27,10 +31,6 @@ export function Field<T>({
       });
 
       if (validateOnChangeAsync && !errorMessage) {
-        if (validationTimeoutRef.current) {
-          clearTimeout(validationTimeoutRef.current);
-        }
-
         onChange({
           ...state,
           value,
@@ -68,12 +68,12 @@ export function Field<T>({
   }
 
   async function handleBlur() {
-    if (!state.isTouched) {
-      return;
-    }
-
     if (validationTimeoutRef.current) {
       clearTimeout(validationTimeoutRef.current);
+    }
+
+    if (!state.isTouched) {
+      return;
     }
 
     let errorMessage =
