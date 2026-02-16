@@ -1,6 +1,12 @@
 "use client";
 
-import { Field, createFieldState, useFormFocus, validateAsync } from "form";
+import {
+  Field,
+  createFieldState,
+  useFormFocus,
+  validateAsync,
+  validateIfDirty,
+} from "form";
 import { useState } from "react";
 import { Input } from "../components/Input";
 import {
@@ -57,6 +63,23 @@ export default function Home() {
     <main className="mx-auto max-w-xl pt-20">
       <form ref={formRef} className="flex flex-col gap-4" onSubmit={onSubmit}>
         <Field
+          state={form.email}
+          onChange={(email) => setForm((prev) => ({ ...prev, email }))}
+          validateOnChange={validateEmail}
+        >
+          {(props) => (
+            <Input
+              label="Email"
+              errorMessage={props.errorMessage}
+              onBlur={props.handleBlur}
+              onChange={(e) => props.handleChange(e.target.value)}
+              isValid={props.isValid}
+              isValidating={props.isValidating}
+              value={props.value}
+            />
+          )}
+        </Field>
+        <Field
           state={form.username}
           onChange={(name) => setForm((prev) => ({ ...prev, username: name }))}
           validateOnChange={validateUsername}
@@ -75,25 +98,17 @@ export default function Home() {
           )}
         </Field>
         <Field
-          state={form.email}
-          onChange={(email) => setForm((prev) => ({ ...prev, email }))}
-          validateOnChange={validateEmail}
-        >
-          {(props) => (
-            <Input
-              label="Email"
-              errorMessage={props.errorMessage}
-              onBlur={props.handleBlur}
-              onChange={(e) => props.handleChange(e.target.value)}
-              isValid={props.isValid}
-              isValidating={props.isValidating}
-              value={props.value}
-            />
-          )}
-        </Field>
-        <Field
           state={form.password}
-          onChange={(password) => setForm((prev) => ({ ...prev, password }))}
+          onChange={(password) => {
+            setForm((prev) => ({
+              ...prev,
+              password,
+              repeatPassword: validateIfDirty(
+                prev.repeatPassword,
+                validateRepeatPassword(password.value),
+              ),
+            }));
+          }}
           validateOnChange={validatePassword}
         >
           {(props) => (

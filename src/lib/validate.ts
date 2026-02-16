@@ -4,10 +4,6 @@ export function validate<T>(
   state: FieldState<T>,
   ...validators: Array<SyncValidator<T> | undefined>
 ): FieldState<T> {
-  if (!state.isValid) {
-    return state;
-  }
-
   for (const validator of validators) {
     const errorMessage = validator?.(state.value);
     if (errorMessage) {
