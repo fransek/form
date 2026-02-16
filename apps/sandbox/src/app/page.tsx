@@ -1,39 +1,42 @@
 "use client";
 
-import { Field, createFieldState, useFormFocus, validateAsync } from "form";
+import { Field, createFieldState, useFormFocus } from "form";
 import { useState } from "react";
 import { Input } from "../components/Input";
 import {
-  validateName,
-  validateNameAsync,
-  validateRepeatName,
-  validateRepeatNameAsync,
+  validateEmail,
+  validatePassword,
+  validateRepeatPassword,
+  validateUsername,
+  validateUsernameAsync,
 } from "../lib/validation";
 
 export default function Home() {
   const [form, setForm] = useState({
-    name: createFieldState(""),
-    repeatName: createFieldState(""),
+    username: createFieldState(""),
+    email: createFieldState(""),
+    password: createFieldState(""),
+    repeatPassword: createFieldState(""),
   });
-  const [isValidating, setIsValidating] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { focusFirstError, formRef } = useFormFocus();
 
   const onSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsValidating(true);
+    setIsSubmitting(true);
 
-    const newForm = await Promise.all([
-      validateAsync(form.name, validateName, validateNameAsync),
-      validateAsync(
-        form.repeatName,
-        validateRepeatName(form.name.value),
-        validateRepeatNameAsync,
-      ),
-    ]).then(([name, repeatName]) => ({ name, repeatName }));
+    // const newForm = await Promise.all([
+    //   validateAsync(form.name, validateName, validateNameAsync),
+    //   validateAsync(
+    //     form.email,
+    //     validateRepeatName(form.name.value),
+    //     validateRepeatNameAsync,
+    //   ),
+    // ]).then(([name, repeatName]) => ({ name, repeatName }));
 
-    setForm(newForm);
-    setIsValidating(false);
+    // setForm(newForm);
+    setIsSubmitting(false);
     focusFirstError();
   };
 
@@ -41,65 +44,88 @@ export default function Home() {
     <main className="mx-auto max-w-xl pt-20">
       <form ref={formRef} className="flex flex-col gap-4" onSubmit={onSubmit}>
         <Field
-          state={form.name}
-          onChange={(name) => setForm((prev) => ({ ...prev, name }))}
-          validateOnChange={validateName}
-          validateOnChangeAsync={validateNameAsync}
+          state={form.username}
+          onChange={(name) => setForm((prev) => ({ ...prev, username: name }))}
+          validateOnChange={validateUsername}
+          validateOnChangeAsync={validateUsernameAsync}
         >
-          {({
-            errorMessage,
-            handleBlur,
-            handleChange,
-            isValid,
-            isValidating,
-            value,
-          }) => (
+          {(props) => (
             <Input
-              name="name"
-              label="Name"
-              errorMessage={errorMessage}
-              onBlur={handleBlur}
-              onChange={(e) => handleChange(e.target.value)}
-              isValid={isValid}
-              isValidating={isValidating}
-              value={value}
+              name="username"
+              label="Username"
+              errorMessage={props.errorMessage}
+              onBlur={props.handleBlur}
+              onChange={(e) => props.handleChange(e.target.value)}
+              isValid={props.isValid}
+              isValidating={props.isValidating}
+              value={props.value}
             />
           )}
         </Field>
         <Field
-          state={form.repeatName}
-          onChange={(repeatName) =>
-            setForm((prev) => ({ ...prev, repeatName }))
-          }
-          validateOnBlur={validateRepeatName(form.name.value)}
-          validateOnBlurAsync={validateRepeatNameAsync}
+          state={form.email}
+          onChange={(email) => setForm((prev) => ({ ...prev, email }))}
+          validateOnChange={validateEmail}
         >
-          {({
-            errorMessage,
-            handleBlur,
-            handleChange,
-            isValid,
-            isValidating,
-            value,
-          }) => (
+          {(props) => (
             <Input
-              name="repeatName"
-              label="Repeat Name"
-              errorMessage={errorMessage}
-              onBlur={handleBlur}
-              onChange={(e) => handleChange(e.target.value)}
-              isValid={isValid}
-              isValidating={isValidating}
-              value={value}
+              name="email"
+              label="Email"
+              errorMessage={props.errorMessage}
+              onBlur={props.handleBlur}
+              onChange={(e) => props.handleChange(e.target.value)}
+              isValid={props.isValid}
+              isValidating={props.isValidating}
+              value={props.value}
+            />
+          )}
+        </Field>
+        <Field
+          state={form.password}
+          onChange={(password) => setForm((prev) => ({ ...prev, password }))}
+          validateOnChange={validatePassword}
+        >
+          {(props) => (
+            <Input
+              name="password"
+              label="Password"
+              errorMessage={props.errorMessage}
+              onBlur={props.handleBlur}
+              onChange={(e) => props.handleChange(e.target.value)}
+              isValid={props.isValid}
+              isValidating={props.isValidating}
+              value={props.value}
+              type="password"
+            />
+          )}
+        </Field>
+        <Field
+          state={form.repeatPassword}
+          onChange={(repeatPassword) =>
+            setForm((prev) => ({ ...prev, repeatPassword }))
+          }
+          validateOnChange={validateRepeatPassword(form.password.value)}
+        >
+          {(props) => (
+            <Input
+              name="repeatPassword"
+              label="Repeat Password"
+              errorMessage={props.errorMessage}
+              onBlur={props.handleBlur}
+              onChange={(e) => props.handleChange(e.target.value)}
+              isValid={props.isValid}
+              isValidating={props.isValidating}
+              value={props.value}
+              type="password"
             />
           )}
         </Field>
         <button
           type="submit"
           className="bg-green-700 rounded-lg p-2"
-          disabled={isValidating}
+          disabled={isSubmitting}
         >
-          {isValidating ? "Validating..." : "Submit"}
+          {isSubmitting ? "Submitting..." : "Submit"}
         </button>
       </form>
     </main>

@@ -22,6 +22,8 @@ export function Field<T>({
 
     if (state.isDirty) {
       let errorMessage = validateOnChange?.(value);
+      const currentValidation = ++validationCounterRef.current;
+
       onChange({
         ...state,
         value,
@@ -39,8 +41,6 @@ export function Field<T>({
           errorMessage: undefined,
           isValid: true,
         });
-
-        const currentValidation = ++validationCounterRef.current;
 
         validationTimeoutRef.current = setTimeout(async () => {
           errorMessage = await validateOnChangeAsync(value);
@@ -79,7 +79,7 @@ export function Field<T>({
     let errorMessage =
       state.errorMessage ||
       validateOnBlur?.(state.value) ||
-      validateOnChange?.(state.value);
+      (state.isDirty ? undefined : validateOnChange?.(state.value));
 
     if (!errorMessage && (validateOnBlurAsync || validateOnChangeAsync)) {
       onChange({
@@ -87,10 +87,15 @@ export function Field<T>({
         isValidating: true,
       });
 
-      errorMessage = await Promise.all([
-        validateOnBlurAsync?.(state.value),
-        validateOnChangeAsync?.(state.value),
-      ]).then(([blurError, changeError]) => blurError || changeError);
+      const asyncValidations = [validateOnBlurAsync?.(state.value)];
+
+      if (!state.isDirty) {
+        asyncValidations.push(validateOnChangeAsync?.(state.value));
+      }
+
+      errorMessage = await Promise.all(asyncValidations).then(
+        ([blurError, changeError]) => blurError || changeError,
+      );
     }
 
     onChange({
