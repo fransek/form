@@ -1,6 +1,6 @@
 "use client";
 
-import { Field, createFieldState, useFormFocus } from "form";
+import { Field, createFieldState, useFormFocus, validateAsync } from "form";
 import { useState } from "react";
 import { Input } from "../components/Input";
 import {
@@ -26,18 +26,31 @@ export default function Home() {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // const newForm = await Promise.all([
-    //   validateAsync(form.name, validateName, validateNameAsync),
-    //   validateAsync(
-    //     form.email,
-    //     validateRepeatName(form.name.value),
-    //     validateRepeatNameAsync,
-    //   ),
-    // ]).then(([name, repeatName]) => ({ name, repeatName }));
+    const newForm = await Promise.all([
+      validateAsync(form.username, validateUsername, validateUsernameAsync),
+      validateAsync(form.email, validateEmail),
+      validateAsync(form.password, validatePassword),
+      validateAsync(
+        form.repeatPassword,
+        validateRepeatPassword(form.password.value),
+      ),
+    ]).then(([username, email, password, repeatPassword]) => ({
+      username,
+      email,
+      password,
+      repeatPassword,
+    }));
 
-    // setForm(newForm);
+    setForm(newForm);
     setIsSubmitting(false);
-    focusFirstError();
+
+    const isFormValid = Object.values(newForm).every((field) => field.isValid);
+
+    if (isFormValid) {
+      alert("Form submitted successfully!");
+    } else {
+      focusFirstError();
+    }
   };
 
   return (
@@ -51,7 +64,6 @@ export default function Home() {
         >
           {(props) => (
             <Input
-              name="username"
               label="Username"
               errorMessage={props.errorMessage}
               onBlur={props.handleBlur}
@@ -69,7 +81,6 @@ export default function Home() {
         >
           {(props) => (
             <Input
-              name="email"
               label="Email"
               errorMessage={props.errorMessage}
               onBlur={props.handleBlur}
@@ -87,7 +98,6 @@ export default function Home() {
         >
           {(props) => (
             <Input
-              name="password"
               label="Password"
               errorMessage={props.errorMessage}
               onBlur={props.handleBlur}
@@ -108,7 +118,6 @@ export default function Home() {
         >
           {(props) => (
             <Input
-              name="repeatPassword"
               label="Repeat Password"
               errorMessage={props.errorMessage}
               onBlur={props.handleBlur}

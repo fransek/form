@@ -1,8 +1,8 @@
 "use client";
 import { cn } from "@/lib/utils";
+import { useId } from "react";
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  name: string;
   label?: string;
   errorMessage?: React.ReactNode;
   isValid?: boolean;
@@ -10,7 +10,7 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
 }
 
 export function Input({
-  name,
+  id: _id,
   label,
   value,
   errorMessage,
@@ -18,17 +18,19 @@ export function Input({
   isValidating = false,
   ...props
 }: InputProps) {
-  const errorId = `${name}-error`;
+  const reactId = useId();
+  const id = _id ?? reactId;
+  const errorId = `${id}-error`;
+
   return (
     <div>
       {label && (
-        <label htmlFor={name} className="block">
+        <label htmlFor={id} className="block">
           {label}
         </label>
       )}
       <input
-        name={name}
-        id={name}
+        id={id}
         className={cn(
           "border-2 rounded-lg p-2 outline-none transition-colors w-full",
           isValidating && "border-blue-500",
@@ -36,7 +38,7 @@ export function Input({
         )}
         value={value}
         aria-invalid={!isValid}
-        aria-errormessage={errorId}
+        aria-errormessage={isValid ? undefined : errorId}
         {...props}
       />
       <div className="contents" aria-live="polite">

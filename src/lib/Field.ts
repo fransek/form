@@ -68,10 +68,6 @@ export function Field<T>({
   }
 
   async function handleBlur() {
-    if (validationTimeoutRef.current) {
-      clearTimeout(validationTimeoutRef.current);
-    }
-
     if (!state.isTouched) {
       return;
     }
