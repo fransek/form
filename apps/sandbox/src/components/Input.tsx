@@ -7,6 +7,7 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
   errorMessage?: React.ReactNode;
   isValid?: boolean;
   isValidating?: boolean;
+  isValidatingMessage?: React.ReactNode;
 }
 
 export function Input({
@@ -16,6 +17,7 @@ export function Input({
   errorMessage,
   isValid = true,
   isValidating = false,
+  isValidatingMessage = "Validating...",
   ...props
 }: InputProps) {
   const reactId = useId();
@@ -42,11 +44,13 @@ export function Input({
         {...props}
       />
       <div className="contents" aria-live="polite">
-        {errorMessage && (
+        {errorMessage ? (
           <p id={errorId} className="text-red-500">
             {errorMessage}
           </p>
-        )}
+        ) : isValidating ? (
+          <p className="text-blue-500">{isValidatingMessage}</p>
+        ) : null}
       </div>
     </div>
   );

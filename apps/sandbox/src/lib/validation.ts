@@ -4,7 +4,7 @@ export const validateUsername = (value: string) => {
   }
 };
 export const validateUsernameAsync = async (value: string) => {
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+  await new Promise((resolve) => setTimeout(resolve, 500));
 
   if (value.toLowerCase() === "john") {
     return "Username is already taken";

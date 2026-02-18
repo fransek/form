@@ -94,6 +94,7 @@ export default function Home() {
               isValid={props.isValid}
               isValidating={props.isValidating}
               value={props.value}
+              isValidatingMessage="Checking availability..."
             />
           )}
         </Field>

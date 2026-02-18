@@ -12,49 +12,45 @@ export function Field<T>({
   validateOnBlur,
   validateOnBlurAsync,
 }: FieldProps<T>) {
-  const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const validationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const validationCounterRef = useRef(0);
+  const isValidatingOnBlurRef = useRef(false);
+  const isValidatingOnChangeRef = useRef(false);
 
   function handleChange(value: T) {
     if (validationTimeoutRef.current) {
       clearTimeout(validationTimeoutRef.current);
     }
 
-    if (state.isDirty) {
-      let errorMessage = validateOnChange?.(value);
+    if (state.isDirty && (validateOnChange || validateOnChangeAsync)) {
       const currentValidation = ++validationCounterRef.current;
+      const errorMessage = validateOnChange?.(value);
+      const willValidateAsync = Boolean(validateOnChangeAsync && !errorMessage);
 
       onChange({
         ...state,
         value,
         errorMessage,
-        isTouched: true,
         isValid: !errorMessage,
+        isValidating: willValidateAsync,
       });
 
-      if (validateOnChangeAsync && !errorMessage) {
-        onChange({
-          ...state,
-          value,
-          isTouched: true,
-          isValidating: true,
-          errorMessage: undefined,
-          isValid: true,
-        });
-
+      if (willValidateAsync) {
+        isValidatingOnChangeRef.current = true;
         validationTimeoutRef.current = setTimeout(async () => {
-          errorMessage = await validateOnChangeAsync(value);
+          const asyncErrorMessage = await validateOnChangeAsync?.(value);
 
           if (currentValidation === validationCounterRef.current) {
             onChange({
               ...state,
               value,
-              errorMessage,
-              isTouched: true,
-              isValid: !errorMessage,
-              isValidating: false,
-              isDirty: true,
+              errorMessage: asyncErrorMessage,
+              isValid: !asyncErrorMessage,
+              isValidating: isValidatingOnBlurRef.current,
             });
+            isValidatingOnChangeRef.current = false;
           }
         }, debounceMs);
       }
@@ -68,16 +64,20 @@ export function Field<T>({
   }
 
   async function handleBlur() {
+    onBlur?.();
+
     if (!state.isTouched) {
       return;
     }
 
-    let errorMessage =
-      state.errorMessage ||
-      validateOnBlur?.(state.value) ||
-      (state.isDirty ? undefined : validateOnChange?.(state.value));
+    let errorMessage = state.errorMessage || validateOnBlur?.(state.value);
+
+    if (!errorMessage && !state.isDirty && validateOnChange) {
+      errorMessage = validateOnChange(state.value);
+    }
 
     if (!errorMessage && (validateOnBlurAsync || validateOnChangeAsync)) {
+      isValidatingOnBlurRef.current = true;
       onChange({
         ...state,
         isValidating: true,
@@ -89,9 +89,8 @@ export function Field<T>({
         asyncValidations.push(validateOnChangeAsync?.(state.value));
       }
 
-      errorMessage = await Promise.all(asyncValidations).then(
-        ([blurError, changeError]) => blurError || changeError,
-      );
+      const [blurError, changeError] = await Promise.all(asyncValidations);
+      errorMessage = blurError || changeError;
     }
 
     onChange({
@@ -99,9 +98,9 @@ export function Field<T>({
       errorMessage,
       isDirty: true,
       isValid: !errorMessage,
-      isValidating: false,
+      isValidating: isValidatingOnChangeRef.current,
     });
-    onBlur?.();
+    isValidatingOnBlurRef.current = false;
   }
 
   return children({
