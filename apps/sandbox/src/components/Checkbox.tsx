@@ -1,50 +1,36 @@
-"use client";
 import { cn, useFieldId } from "@/lib/utils";
 import { ErrorMessage } from "./ErrorMessage";
 
-export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label?: string;
+interface CheckboxProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  label: string;
   errorMessage?: React.ReactNode;
   isValidating?: boolean;
   isValidatingMessage?: React.ReactNode;
-  button?: React.ReactNode;
 }
 
-export function Input({
+export function Checkbox({
   id: _id,
   label,
   errorMessage,
   isValidating = false,
   isValidatingMessage = "Validating...",
   className,
-  button,
   ...props
-}: InputProps) {
+}: CheckboxProps) {
   const { id, errorId } = useFieldId(_id);
 
   return (
     <div>
-      {label && (
-        <label htmlFor={id} className="block mb-1 font-bold">
-          {label}
-        </label>
-      )}
-      <div className="flex gap-2 items-stretch">
+      <label className={cn("flex items-center gap-1", className)}>
         <input
           id={id}
-          className={cn(
-            "border-2 rounded-lg p-2 outline-none transition-colors w-full",
-            isValidating && "border-blue-500",
-            errorMessage && "border-red-500",
-            className,
-          )}
+          type="checkbox"
           aria-invalid={!!errorMessage}
           aria-errormessage={errorMessage ? errorId : undefined}
-          autoComplete="new-password" // Disable autocomplete
           {...props}
         />
-        {button}
-      </div>
+        {label}
+      </label>
       <ErrorMessage
         id={errorId}
         isValidating={isValidating}

@@ -1,9 +1,15 @@
+import { GenderOption, HobbyOption } from "./options";
+
 export const validateUsername = (value: string) => {
   if (!value) {
     return "Username is required";
   }
 };
 export const validateUsernameAsync = async (value: string) => {
+  if (!value) {
+    return;
+  }
+
   await new Promise((resolve) => setTimeout(resolve, 500));
 
   if (value.toLowerCase() === "john") {
@@ -32,7 +38,29 @@ export const validatePassword = (value: string) => {
 };
 
 export const validateRepeatPassword = (password: string) => (value: string) => {
+  if (!value) {
+    return "Please repeat your password";
+  }
+
   if (value !== password) {
     return "Passwords do not match";
+  }
+};
+
+export const validateHobbies = (value: HobbyOption[]) => {
+  if (value.length < 1 || value.length > 2) {
+    return "Please select 1-2 hobbies";
+  }
+};
+
+export const validateFavoriteColor = (value: string) => {
+  if (!value) {
+    return "Color is required";
+  }
+};
+
+export const validateGender = (value: GenderOption | "") => {
+  if (!value) {
+    return "Gender is required";
   }
 };

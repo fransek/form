@@ -1,9 +1,20 @@
 "use client";
 
+import { Button } from "@/components/Button";
+import { Checkbox } from "@/components/Checkbox";
+import { Fieldset } from "@/components/Fieldset";
+import { Radio } from "@/components/Radio";
+import {
+  GenderOption,
+  HobbyOption,
+  genderOptions,
+  hobbyOptions,
+} from "@/lib/options";
 import {
   Field,
   createFieldState,
   useFormFocus,
+  validate,
   validateAsync,
   validateIfDirty,
 } from "form";
@@ -11,6 +22,9 @@ import { useState } from "react";
 import { Input } from "../components/Input";
 import {
   validateEmail,
+  validateFavoriteColor,
+  validateGender,
+  validateHobbies,
   validatePassword,
   validateRepeatPassword,
   validateUsername,
@@ -19,11 +33,15 @@ import {
 
 export default function Home() {
   const [form, setForm] = useState({
-    username: createFieldState(""),
     email: createFieldState(""),
+    username: createFieldState(""),
+    gender: createFieldState<GenderOption | "">(""),
+    hobbies: createFieldState<HobbyOption[]>([]),
+    favoriteColors: [createFieldState("")],
     password: createFieldState(""),
     repeatPassword: createFieldState(""),
   });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { focusFirstError, formRef } = useFormFocus();
@@ -32,25 +50,34 @@ export default function Home() {
     e.preventDefault();
     setIsSubmitting(true);
 
-    const newForm = await Promise.all([
-      validateAsync(form.username, validateUsername, validateUsernameAsync),
-      validateAsync(form.email, validateEmail),
-      validateAsync(form.password, validatePassword),
-      validateAsync(
+    const newForm = {
+      username: await validateAsync(
+        form.username,
+        validateUsername,
+        validateUsernameAsync,
+      ),
+      email: validate(form.email, validateEmail),
+      gender: validate(form.gender, validateGender),
+      hobbies: validate(form.hobbies, validateHobbies),
+      favoriteColors: form.favoriteColors.map((color) =>
+        validate(color, validateFavoriteColor),
+      ),
+      password: validate(form.password, validatePassword),
+      repeatPassword: validate(
         form.repeatPassword,
         validateRepeatPassword(form.password.value),
       ),
-    ]).then(([username, email, password, repeatPassword]) => ({
-      username,
-      email,
-      password,
-      repeatPassword,
-    }));
+    };
 
     setForm(newForm);
     setIsSubmitting(false);
 
-    const isFormValid = Object.values(newForm).every((field) => field.isValid);
+    const isFormValid = Object.values(newForm).every((field) => {
+      if (Array.isArray(field)) {
+        return field.every((f) => f.isValid);
+      }
+      return field.isValid;
+    });
 
     if (isFormValid) {
       alert("Form submitted successfully!");
@@ -73,7 +100,6 @@ export default function Home() {
               errorMessage={props.errorMessage}
               onBlur={props.handleBlur}
               onChange={(e) => props.handleChange(e.target.value)}
-              isValid={props.isValid}
               isValidating={props.isValidating}
               value={props.value}
             />
@@ -91,13 +117,131 @@ export default function Home() {
               errorMessage={props.errorMessage}
               onBlur={props.handleBlur}
               onChange={(e) => props.handleChange(e.target.value)}
-              isValid={props.isValid}
               isValidating={props.isValidating}
               value={props.value}
               isValidatingMessage="Checking availability..."
             />
           )}
         </Field>
+        <Field
+          state={form.gender}
+          onChange={(gender) => setForm((prev) => ({ ...prev, gender }))}
+          validateOnChange={validateGender}
+        >
+          {(props) => (
+            <Fieldset legend="Gender" errorMessage={props.errorMessage}>
+              <div className="flex gap-4">
+                {genderOptions.map((option) => (
+                  <Radio
+                    key={option.value}
+                    name="gender"
+                    label={option.label}
+                    value={option.value}
+                    checked={props.value === option.value}
+                    onChange={() => props.handleChange(option.value)}
+                    onBlur={props.handleBlur}
+                  />
+                ))}
+              </div>
+            </Fieldset>
+          )}
+        </Field>
+        <Field
+          state={form.hobbies}
+          onChange={(hobbies) => setForm((prev) => ({ ...prev, hobbies }))}
+          validateOnChange={validateHobbies}
+        >
+          {(props) => (
+            <Fieldset legend="Hobbies" errorMessage={props.errorMessage}>
+              <div className="flex gap-4">
+                {hobbyOptions.map((option) => (
+                  <Checkbox
+                    key={option.value}
+                    name="hobbies"
+                    label={option.label}
+                    value={option.value}
+                    checked={props.value.includes(option.value)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        props.handleChange([...props.value, option.value]);
+                      } else {
+                        props.handleChange(
+                          props.value.filter((v) => v !== option.value),
+                        );
+                      }
+                    }}
+                    onBlur={props.handleBlur}
+                  />
+                ))}
+              </div>
+            </Fieldset>
+          )}
+        </Field>
+        {form.favoriteColors.map((color, index) => (
+          <Field
+            key={index}
+            state={color}
+            onChange={(newColor) =>
+              setForm((prev) => ({
+                ...prev,
+                favoriteColors: prev.favoriteColors.map((c, i) =>
+                  i === index ? newColor : c,
+                ),
+              }))
+            }
+            validateOnChange={validateFavoriteColor}
+          >
+            {(props) => (
+              <Input
+                label={
+                  "Favorite Color" +
+                  (form.favoriteColors.length > 1 ? ` ${index + 1}` : "")
+                }
+                errorMessage={props.errorMessage}
+                onBlur={props.handleBlur}
+                onChange={(e) => props.handleChange(e.target.value)}
+                isValidating={props.isValidating}
+                value={props.value}
+                button={
+                  form.favoriteColors.length > 1 ? (
+                    <Button
+                      type="button"
+                      variant="danger"
+                      onClick={() => {
+                        setForm((prev) => ({
+                          ...prev,
+                          favoriteColors: prev.favoriteColors.filter(
+                            (_, i) => i !== index,
+                          ),
+                        }));
+                      }}
+                    >
+                      Remove
+                    </Button>
+                  ) : undefined
+                }
+              />
+            )}
+          </Field>
+        ))}
+        {form.favoriteColors.every((color) => color.value) &&
+          form.favoriteColors.length < 5 && (
+            <Button
+              variant="secondary"
+              type="button"
+              onClick={() =>
+                setForm((prev) => ({
+                  ...prev,
+                  favoriteColors: [
+                    ...prev.favoriteColors,
+                    createFieldState(""),
+                  ],
+                }))
+              }
+            >
+              Add Another Color
+            </Button>
+          )}
         <Field
           state={form.password}
           onChange={(password) => {
@@ -118,7 +262,6 @@ export default function Home() {
               errorMessage={props.errorMessage}
               onBlur={props.handleBlur}
               onChange={(e) => props.handleChange(e.target.value)}
-              isValid={props.isValid}
               isValidating={props.isValidating}
               value={props.value}
               type="password"
@@ -138,20 +281,15 @@ export default function Home() {
               errorMessage={props.errorMessage}
               onBlur={props.handleBlur}
               onChange={(e) => props.handleChange(e.target.value)}
-              isValid={props.isValid}
               isValidating={props.isValidating}
               value={props.value}
               type="password"
             />
           )}
         </Field>
-        <button
-          type="submit"
-          className="bg-green-700 rounded-lg p-2"
-          disabled={isSubmitting}
-        >
+        <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? "Submitting..." : "Submit"}
-        </button>
+        </Button>
       </form>
     </main>
   );
