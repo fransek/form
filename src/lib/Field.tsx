@@ -8,9 +8,10 @@ export function Field<T>({
   onBlur,
   validateOnChange,
   validateOnChangeAsync,
-  debounceMs = 500,
   validateOnBlur,
   validateOnBlurAsync,
+  debounceMs = 500,
+  validateOnTouch = false,
 }: FieldProps<T>) {
   const validationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
@@ -24,7 +25,10 @@ export function Field<T>({
       clearTimeout(validationTimeoutRef.current);
     }
 
-    if (state.isDirty && (validateOnChange || validateOnChangeAsync)) {
+    if (
+      (state.isDirty || validateOnTouch) &&
+      (validateOnChange || validateOnChangeAsync)
+    ) {
       const currentValidation = ++validationCounterRef.current;
       const errorMessage = validateOnChange?.(value);
       const willValidateAsync = Boolean(validateOnChangeAsync && !errorMessage);

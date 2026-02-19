@@ -22,6 +22,7 @@ export interface FieldOptions<T> {
   validateOnBlur?: SyncValidator<T>;
   validateOnBlurAsync?: AsyncValidator<T>;
   debounceMs?: number;
+  validateOnTouch?: boolean;
 }
 
 export interface FieldProps<T> extends FieldOptions<T> {
