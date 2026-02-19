@@ -9,9 +9,13 @@ export function useFormFocus() {
       return;
     }
 
-    const firstInvalid = formRef.current?.querySelector<HTMLElement>(
+    let firstInvalid = formRef.current?.querySelector<HTMLElement>(
       "[aria-invalid='true']",
     );
+
+    if (firstInvalid?.role === "radiogroup") {
+      firstInvalid = firstInvalid.querySelector<HTMLElement>('[type="radio"]');
+    }
 
     firstInvalid?.focus();
     shouldFocusError.current = false;
