@@ -2,8 +2,9 @@
 
 import { Button } from "@/components/Button";
 import { Checkbox } from "@/components/Checkbox";
-import { Fieldset } from "@/components/Fieldset";
+import { CheckboxGroup } from "@/components/CheckboxGroup";
 import { Radio } from "@/components/Radio";
+import { RadioGroup } from "@/components/RadioGroup";
 import {
   GenderOption,
   HobbyOption,
@@ -110,6 +111,7 @@ export default function Home() {
           onChange={(name) => setForm((prev) => ({ ...prev, username: name }))}
           validateOnChange={validateUsername}
           validateOnChangeAsync={validateUsernameAsync}
+          validateOnTouch
         >
           {(props) => (
             <Input
@@ -129,21 +131,23 @@ export default function Home() {
           validateOnChange={validateGender}
         >
           {(props) => (
-            <Fieldset legend="Gender" errorMessage={props.errorMessage}>
-              <div className="flex gap-4">
-                {genderOptions.map((option) => (
-                  <Radio
-                    key={option.value}
-                    name="gender"
-                    label={option.label}
-                    value={option.value}
-                    checked={props.value === option.value}
-                    onChange={() => props.handleChange(option.value)}
-                    onBlur={props.handleBlur}
-                  />
-                ))}
-              </div>
-            </Fieldset>
+            <RadioGroup
+              label="Gender"
+              errorMessage={props.errorMessage}
+              horizontal
+            >
+              {genderOptions.map((option) => (
+                <Radio
+                  key={option.value}
+                  name="gender"
+                  label={option.label}
+                  value={option.value}
+                  checked={props.value === option.value}
+                  onChange={() => props.handleChange(option.value)}
+                  onBlur={props.handleBlur}
+                />
+              ))}
+            </RadioGroup>
           )}
         </Field>
         <Field
@@ -152,29 +156,31 @@ export default function Home() {
           validateOnChange={validateHobbies}
         >
           {(props) => (
-            <Fieldset legend="Hobbies" errorMessage={props.errorMessage}>
-              <div className="flex gap-4">
-                {hobbyOptions.map((option) => (
-                  <Checkbox
-                    key={option.value}
-                    name="hobbies"
-                    label={option.label}
-                    value={option.value}
-                    checked={props.value.includes(option.value)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        props.handleChange([...props.value, option.value]);
-                      } else {
-                        props.handleChange(
-                          props.value.filter((v) => v !== option.value),
-                        );
-                      }
-                    }}
-                    onBlur={props.handleBlur}
-                  />
-                ))}
-              </div>
-            </Fieldset>
+            <CheckboxGroup
+              label="Hobbies"
+              errorMessage={props.errorMessage}
+              horizontal
+            >
+              {hobbyOptions.map((option) => (
+                <Checkbox
+                  key={option.value}
+                  name="hobbies"
+                  label={option.label}
+                  value={option.value}
+                  checked={props.value.includes(option.value)}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      props.handleChange([...props.value, option.value]);
+                    } else {
+                      props.handleChange(
+                        props.value.filter((v) => v !== option.value),
+                      );
+                    }
+                  }}
+                  onBlur={props.handleBlur}
+                />
+              ))}
+            </CheckboxGroup>
           )}
         </Field>
         {form.favoriteColors.map((color, index) => (

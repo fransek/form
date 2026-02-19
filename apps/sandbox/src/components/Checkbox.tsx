@@ -1,4 +1,5 @@
 import { cn, useFieldId } from "@/lib/utils";
+import { useCheckboxGroupContext } from "./CheckboxGroup";
 import { ErrorMessage } from "./ErrorMessage";
 
 interface CheckboxProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -18,6 +19,7 @@ export function Checkbox({
   ...props
 }: CheckboxProps) {
   const { id, errorId } = useFieldId(_id);
+  const { ariaInvalid, ariaDescribedby } = useCheckboxGroupContext();
 
   return (
     <div>
@@ -25,8 +27,10 @@ export function Checkbox({
         <input
           id={id}
           type="checkbox"
-          aria-invalid={!!errorMessage}
-          aria-errormessage={errorMessage ? errorId : undefined}
+          aria-invalid={!!errorMessage || ariaInvalid}
+          aria-describedby={
+            [errorId, ariaDescribedby].filter(Boolean).join(" ") || undefined
+          }
           {...props}
         />
         {label}

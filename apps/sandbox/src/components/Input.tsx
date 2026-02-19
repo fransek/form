@@ -39,7 +39,7 @@ export function Input({
             className,
           )}
           aria-invalid={!!errorMessage}
-          aria-errormessage={errorMessage ? errorId : undefined}
+          aria-describedby={errorId}
           autoComplete="new-password" // Disable autocomplete
           {...props}
         />

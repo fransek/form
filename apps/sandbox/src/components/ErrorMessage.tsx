@@ -12,11 +12,9 @@ export function ErrorMessage({
   isValidatingMessage = "Validating...",
 }: ErrorMessageProps) {
   return (
-    <div className="contents" aria-live="polite">
+    <div id={id}>
       {children ? (
-        <p id={id} className="text-red-500">
-          {children}
-        </p>
+        <p className="text-red-500">{children}</p>
       ) : isValidating ? (
         <p className="text-blue-500">{isValidatingMessage}</p>
       ) : null}
