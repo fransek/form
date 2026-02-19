@@ -5,9 +5,12 @@ import { Checkbox } from "@/components/Checkbox";
 import { CheckboxGroup } from "@/components/CheckboxGroup";
 import { Radio } from "@/components/Radio";
 import { RadioGroup } from "@/components/RadioGroup";
+import { Select } from "@/components/Select";
 import {
+  FavoriteFruitOption,
   GenderOption,
   HobbyOption,
+  favoriteFruitOptions,
   genderOptions,
   hobbyOptions,
 } from "@/lib/options";
@@ -24,6 +27,7 @@ import { Input } from "../components/Input";
 import {
   validateEmail,
   validateFavoriteColor,
+  validateFavoriteFruit,
   validateGender,
   validateHobbies,
   validatePassword,
@@ -38,6 +42,7 @@ export default function Home() {
     username: createFieldState(""),
     gender: createFieldState<GenderOption | "">(""),
     hobbies: createFieldState<HobbyOption[]>([]),
+    favoriteFruit: createFieldState<FavoriteFruitOption>(""),
     favoriteColors: [createFieldState("")],
     password: createFieldState(""),
     repeatPassword: createFieldState(""),
@@ -60,6 +65,7 @@ export default function Home() {
       email: validate(form.email, validateEmail),
       gender: validate(form.gender, validateGender),
       hobbies: validate(form.hobbies, validateHobbies),
+      favoriteFruit: validate(form.favoriteFruit, validateFavoriteFruit),
       favoriteColors: form.favoriteColors.map((color) =>
         validate(color, validateFavoriteColor),
       ),
@@ -88,7 +94,7 @@ export default function Home() {
   };
 
   return (
-    <main className="mx-auto max-w-xl pt-20">
+    <main className="mx-auto max-w-xl py-20">
       <form ref={formRef} className="flex flex-col gap-4" onSubmit={onSubmit}>
         <Field
           state={form.email}
@@ -248,6 +254,26 @@ export default function Home() {
               Add Another Color
             </Button>
           )}
+        <Field
+          state={form.favoriteFruit}
+          onChange={(favoriteFruit) =>
+            setForm((prev) => ({ ...prev, favoriteFruit }))
+          }
+          validateOnChange={validateFavoriteFruit}
+        >
+          {(props) => (
+            <Select
+              label="Favorite Fruit"
+              errorMessage={props.errorMessage}
+              options={favoriteFruitOptions}
+              onBlur={props.handleBlur}
+              onValueChange={props.handleChange}
+              isValidating={props.isValidating}
+              value={props.value}
+              disablePlaceholderOption
+            />
+          )}
+        </Field>
         <Field
           state={form.password}
           onChange={(password) => {

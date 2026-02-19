@@ -29,7 +29,7 @@ export function Fieldset({
       aria-describedby={errorId}
       aria-invalid={!!errorMessage}
     >
-      <legend className="block mb-1 font-bold">{legend}</legend>
+      <legend className="mb-1 block font-bold">{legend}</legend>
       {children}
       <ErrorMessage
         id={errorId}

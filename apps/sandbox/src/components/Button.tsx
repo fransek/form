@@ -13,12 +13,11 @@ export function Button({
 }: ButtonProps) {
   return (
     <button
-      type="submit"
       className={cn(
-        "p-2 rounded-lg transition-colors",
+        "rounded-lg p-2 transition-colors",
         buttonVariantStyles[variant],
         buttonSizeStyles[size],
-        props.disabled && "opacity-70 cursor-not-allowed",
+        props.disabled && "cursor-not-allowed opacity-70",
         className,
       )}
       {...props}
@@ -27,10 +26,10 @@ export function Button({
 }
 
 export const buttonVariantStyles = {
-  primary: "bg-blue-800 text-white hover:bg-blue-900",
-  secondary: "bg-gray-100 text-gray-800 hover:bg-gray-200",
-  success: "bg-green-800 text-white hover:bg-green-900",
-  danger: "bg-red-800 text-white hover:bg-red-900",
+  primary: "bg-blue-900 text-white hover:bg-blue-900/90",
+  secondary: "bg-gray-100 text-gray-800 hover:bg-gray-100/90",
+  success: "bg-green-900 text-white hover:bg-green-900/90",
+  danger: "bg-red-900 text-white hover:bg-red-900/90",
 };
 
 export type ButtonVariant = keyof typeof buttonVariantStyles;

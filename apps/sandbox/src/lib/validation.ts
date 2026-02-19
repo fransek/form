@@ -1,4 +1,4 @@
-import { GenderOption, HobbyOption } from "./options";
+import { FavoriteFruitOption, GenderOption, HobbyOption } from "./options";
 
 export const validateUsername = (value: string) => {
   if (!value) {
@@ -62,5 +62,11 @@ export const validateFavoriteColor = (value: string) => {
 export const validateGender = (value: GenderOption | "") => {
   if (!value) {
     return "Gender is required";
+  }
+};
+
+export const validateFavoriteFruit = (value: FavoriteFruitOption) => {
+  if (!value) {
+    return "Favorite fruit is required";
   }
 };

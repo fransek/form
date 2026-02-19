@@ -33,7 +33,7 @@ export function CheckboxGroup({
       aria-labelledby={labelId}
       {...props}
     >
-      <span className="block mb-1 font-bold" id={labelId}>
+      <span className="mb-1 block font-bold" id={labelId}>
         {label}
       </span>
       <div

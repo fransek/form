@@ -25,15 +25,15 @@ export function Input({
   return (
     <div>
       {label && (
-        <label htmlFor={id} className="block mb-1 font-bold">
+        <label htmlFor={id} className="mb-1 block font-bold">
           {label}
         </label>
       )}
-      <div className="flex gap-2 items-stretch">
+      <div className="flex items-stretch gap-2">
         <input
           id={id}
           className={cn(
-            "border-2 rounded-lg p-2 outline-none transition-colors w-full",
+            "focus:border-foreground w-full rounded-lg border border-gray-500 p-2 transition-colors outline-none placeholder:text-gray-500",
             isValidating && "border-blue-500",
             errorMessage && "border-red-500",
             className,
