@@ -15,10 +15,6 @@ export function validate<T>(
   state: FieldState<T>,
   ...validators: Array<SyncValidator<T> | undefined>
 ): FieldState<T> {
-  if (!state.isValid) {
-    return state;
-  }
-
   for (const validator of validators) {
     const errorMessage = validator?.(state.value);
     if (errorMessage) {
@@ -28,6 +24,7 @@ export function validate<T>(
         isDirty: true,
         isTouched: true,
         isValid: false,
+        isValidating: false,
       };
     }
   }
@@ -38,6 +35,7 @@ export function validate<T>(
     isDirty: true,
     isTouched: true,
     isValid: true,
+    isValidating: false,
   };
 }
 
@@ -45,13 +43,10 @@ export async function validateAsync<T>(
   state: FieldState<T>,
   ...validators: Array<Validator<T> | undefined>
 ): Promise<FieldState<T>> {
-  if (!state.isValid) {
-    return state;
-  }
-
-  const errorMessage = (
-    await Promise.all(validators.map((validator) => validator?.(state.value)))
-  ).find(Boolean);
+  const errorMessages = await Promise.all(
+    validators.map((validator) => validator?.(state.value)),
+  );
+  const errorMessage = errorMessages.find(Boolean);
 
   if (errorMessage) {
     return {
@@ -60,6 +55,7 @@ export async function validateAsync<T>(
       isDirty: true,
       isTouched: true,
       isValid: false,
+      isValidating: false,
     };
   }
 
@@ -69,6 +65,7 @@ export async function validateAsync<T>(
     isDirty: true,
     isTouched: true,
     isValid: true,
+    isValidating: false,
   };
 }
 
@@ -76,7 +73,7 @@ export function validateIfDirty<T>(
   state: FieldState<T>,
   ...validators: Array<SyncValidator<T> | undefined>
 ): FieldState<T> {
-  if (!state.isDirty || !state.isValid) {
+  if (!state.isDirty) {
     return state;
   }
 
@@ -87,7 +84,7 @@ export async function validateIfDirtyAsync<T>(
   state: FieldState<T>,
   ...validators: Array<Validator<T> | undefined>
 ): Promise<FieldState<T>> {
-  if (!state.isDirty || !state.isValid) {
+  if (!state.isDirty) {
     return state;
   }
 

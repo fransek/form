@@ -71,11 +71,29 @@ describe("Field", () => {
       await user.type(input, "b");
       expectAttribute(input, "data-isdirty", "true");
     });
+
+    it("should validate immediately if validateOnTouch is true", async () => {
+      const validator = vi.fn(minLengthValidator(3));
+      const { user, input } = setupTest({
+        validateOnTouch: true,
+        validateOnChange: validator,
+      });
+
+      await user.type(input, "a");
+
+      await waitFor(() => {
+        expect(validator).toHaveBeenCalledWith("a");
+        expectAttribute(input, "data-istouched", "true");
+        expectAttribute(input, "data-isvalid", "false");
+        expectErrorMessage(input, "Minimum 3 characters");
+      });
+    });
   });
 
   describe("handleBlur", () => {
     it("should do nothing if field is not touched", async () => {
       const { user, input } = setupTest();
+      input.focus();
       await user.tab();
       expectAttribute(input, "data-isdirty", "false");
     });

@@ -14,6 +14,7 @@ interface InputProps {
   validateOnBlur?: (value: string) => React.ReactNode;
   validateOnBlurAsync?: (value: string) => Promise<React.ReactNode>;
   debounceMs?: number;
+  validateOnTouch?: boolean;
 }
 
 const Input = ({
@@ -22,6 +23,7 @@ const Input = ({
   validateOnBlur,
   validateOnBlurAsync,
   debounceMs,
+  validateOnTouch,
 }: InputProps = {}) => {
   const [form, setForm] = useState<FormState>({
     field: createFieldState(""),
@@ -35,6 +37,7 @@ const Input = ({
       validateOnChangeAsync={validateOnChangeAsync}
       validateOnBlur={validateOnBlur}
       validateOnBlurAsync={validateOnBlurAsync}
+      validateOnTouch={validateOnTouch}
       debounceMs={debounceMs}
     >
       {({

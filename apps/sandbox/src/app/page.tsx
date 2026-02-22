@@ -22,7 +22,7 @@ import {
   validateAsync,
   validateIfDirty,
 } from "form";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Input } from "../components/Input";
 import {
   validateEmail,
@@ -37,13 +37,14 @@ import {
 } from "../lib/validation";
 
 export default function Home() {
+  const favoriteColorId = useRef(0);
   const [form, setForm] = useState({
     email: createFieldState(""),
     username: createFieldState(""),
     gender: createFieldState<GenderOption | "">(""),
     hobbies: createFieldState<HobbyOption[]>([]),
     favoriteFruit: createFieldState<FavoriteFruitOption>(""),
-    favoriteColors: [createFieldState("")],
+    favoriteColors: [{ id: 0, state: createFieldState("") }],
     password: createFieldState(""),
     repeatPassword: createFieldState(""),
   });
@@ -54,6 +55,9 @@ export default function Home() {
 
   const onSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (isSubmitting) {
+      return;
+    }
     setIsSubmitting(true);
 
     const newForm = {
@@ -66,9 +70,10 @@ export default function Home() {
       gender: validate(form.gender, validateGender),
       hobbies: validate(form.hobbies, validateHobbies),
       favoriteFruit: validate(form.favoriteFruit, validateFavoriteFruit),
-      favoriteColors: form.favoriteColors.map((color) =>
-        validate(color, validateFavoriteColor),
-      ),
+      favoriteColors: form.favoriteColors.map((color) => ({
+        ...color,
+        state: validate(color.state, validateFavoriteColor),
+      })),
       password: validate(form.password, validatePassword),
       repeatPassword: validate(
         form.repeatPassword,
@@ -81,7 +86,7 @@ export default function Home() {
 
     const isFormValid = Object.values(newForm).every((field) => {
       if (Array.isArray(field)) {
-        return field.every((f) => f.isValid);
+        return field.every((f) => f.state.isValid);
       }
       return field.isValid;
     });
@@ -191,13 +196,13 @@ export default function Home() {
         </Field>
         {form.favoriteColors.map((color, index) => (
           <Field
-            key={index}
-            state={color}
+            key={color.id}
+            state={color.state}
             onChange={(newColor) =>
               setForm((prev) => ({
                 ...prev,
                 favoriteColors: prev.favoriteColors.map((c, i) =>
-                  i === index ? newColor : c,
+                  i === index ? { ...c, state: newColor } : c,
                 ),
               }))
             }
@@ -236,20 +241,24 @@ export default function Home() {
             )}
           </Field>
         ))}
-        {form.favoriteColors.every((color) => color.value) &&
+        {form.favoriteColors.every((color) => color.state.value) &&
           form.favoriteColors.length < 5 && (
             <Button
               variant="secondary"
               type="button"
-              onClick={() =>
+              onClick={() => {
+                const id = ++favoriteColorId.current;
                 setForm((prev) => ({
                   ...prev,
                   favoriteColors: [
                     ...prev.favoriteColors,
-                    createFieldState(""),
+                    {
+                      id,
+                      state: createFieldState(""),
+                    },
                   ],
-                }))
-              }
+                }));
+              }}
             >
               Add Another Color
             </Button>

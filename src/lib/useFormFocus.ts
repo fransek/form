@@ -1,11 +1,11 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function useFormFocus() {
-  const formRef = useRef<HTMLFormElement>(null);
-  const shouldFocusError = useRef(false);
+  const formRef = useRef<HTMLFormElement | null>(null);
+  const [shouldFocusError, setShouldFocusError] = useState(false);
 
   useEffect(() => {
-    if (!shouldFocusError.current) {
+    if (!shouldFocusError) {
       return;
     }
 
@@ -18,11 +18,11 @@ export function useFormFocus() {
     }
 
     firstInvalid?.focus();
-    shouldFocusError.current = false;
-  });
+    setShouldFocusError(false);
+  }, [shouldFocusError]);
 
   function focusFirstError() {
-    shouldFocusError.current = true;
+    setShouldFocusError(true);
   }
 
   function focus(name: string) {

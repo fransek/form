@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { FieldProps } from "./types";
 
 export function Field<T>({
@@ -13,30 +13,43 @@ export function Field<T>({
   debounceMs = 500,
   validateOnTouch = false,
 }: FieldProps<T>) {
+  const stateRef = useRef(state);
   const validationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
-  const validationCounterRef = useRef(0);
+  const validationId = useRef(0);
   const isValidatingOnBlurRef = useRef(false);
   const isValidatingOnChangeRef = useRef(false);
+
+  stateRef.current = state;
+
+  useEffect(() => {
+    return () => {
+      if (validationTimeoutRef.current) {
+        clearTimeout(validationTimeoutRef.current);
+      }
+    };
+  }, []);
 
   function handleChange(value: T) {
     if (validationTimeoutRef.current) {
       clearTimeout(validationTimeoutRef.current);
     }
 
+    const currentValidation = ++validationId.current;
+
     if (
-      (state.isDirty || validateOnTouch) &&
+      (stateRef.current.isDirty || validateOnTouch) &&
       (validateOnChange || validateOnChangeAsync)
     ) {
-      const currentValidation = ++validationCounterRef.current;
       const errorMessage = validateOnChange?.(value);
       const willValidateAsync = Boolean(validateOnChangeAsync && !errorMessage);
 
       onChange({
-        ...state,
+        ...stateRef.current,
         value,
         errorMessage,
+        isTouched: true,
         isValid: !errorMessage,
         isValidating: willValidateAsync,
       });
@@ -46,23 +59,23 @@ export function Field<T>({
         validationTimeoutRef.current = setTimeout(async () => {
           const asyncErrorMessage = await validateOnChangeAsync?.(value);
 
-          if (currentValidation === validationCounterRef.current) {
+          isValidatingOnChangeRef.current = false;
+          if (currentValidation === validationId.current) {
             onChange({
-              ...state,
-              value,
+              ...stateRef.current,
               errorMessage: asyncErrorMessage,
               isValid: !asyncErrorMessage,
               isValidating: isValidatingOnBlurRef.current,
             });
-            isValidatingOnChangeRef.current = false;
           }
         }, debounceMs);
       }
     } else {
       onChange({
-        ...state,
+        ...stateRef.current,
         value,
         isTouched: true,
+        isValidating: false,
       });
     }
   }
@@ -70,45 +83,53 @@ export function Field<T>({
   async function handleBlur() {
     onBlur?.();
 
-    if (!state.isTouched) {
+    const currentValidation = validationId.current;
+
+    if (!stateRef.current.isTouched) {
       return;
     }
 
-    let errorMessage = state.errorMessage || validateOnBlur?.(state.value);
+    let errorMessage =
+      stateRef.current.errorMessage || validateOnBlur?.(stateRef.current.value);
 
-    if (!errorMessage && !state.isDirty && validateOnChange) {
-      errorMessage = validateOnChange(state.value);
+    if (!errorMessage && !stateRef.current.isDirty && validateOnChange) {
+      errorMessage = validateOnChange(stateRef.current.value);
     }
 
     if (!errorMessage && (validateOnBlurAsync || validateOnChangeAsync)) {
       isValidatingOnBlurRef.current = true;
       onChange({
-        ...state,
+        ...stateRef.current,
         isValidating: true,
+        isDirty: true,
       });
 
-      const asyncValidations = [validateOnBlurAsync?.(state.value)];
+      const asyncValidations = [validateOnBlurAsync?.(stateRef.current.value)];
 
-      if (!state.isDirty) {
-        asyncValidations.push(validateOnChangeAsync?.(state.value));
+      if (!stateRef.current.isDirty) {
+        asyncValidations.push(validateOnChangeAsync?.(stateRef.current.value));
       }
 
       const [blurError, changeError] = await Promise.all(asyncValidations);
       errorMessage = blurError || changeError;
     }
 
+    isValidatingOnBlurRef.current = false;
+    if (currentValidation !== validationId.current) {
+      return;
+    }
+
     onChange({
-      ...state,
+      ...stateRef.current,
       errorMessage,
       isDirty: true,
       isValid: !errorMessage,
       isValidating: isValidatingOnChangeRef.current,
     });
-    isValidatingOnBlurRef.current = false;
   }
 
   return children({
-    ...state,
+    ...stateRef.current,
     handleChange,
     handleBlur,
   });
