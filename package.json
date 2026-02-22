@@ -1,19 +1,19 @@
 {
-  "name": "@fransek/package-template",
-  "version": "1.1.0",
+  "name": "@fransek/form",
+  "version": "0.1.0",
   "type": "module",
   "private": false,
   "author": "Frans Ekman <fransedvinekman@gmail.com>",
   "license": "MIT",
-  "description": "Package template for TypeScript packages",
+  "description": "Simple form management without sacrificing control.",
   "keywords": [],
-  "homepage": "https://github.com/fransek/package-template#readme",
+  "homepage": "https://github.com/fransek/form#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/fransek/package-template"
+    "url": "git+https://github.com/fransek/form"
   },
   "bugs": {
-    "url": "https://github.com/fransek/package-template/issues"
+    "url": "https://github.com/fransek/form/issues"
   },
   "files": [
     "dist"
@@ -29,9 +29,10 @@
   "sideEffects": false,
   "scripts": {
     "build": "rollup -c",
-    "dev": "rollup -c -w",
+    "dev": "concurrently -n rollup,sandbox \"rollup -c -w\" \"pnpm -F sandbox dev\"",
     "test": "vitest --run --passWithNoTests",
     "test:watch": "vitest",
+    "test:ui": "vitest --ui --coverage",
     "coverage": "vitest --run --coverage --passWithNoTests",
     "lint": "eslint --fix src",
     "format": "prettier --write src",
@@ -47,18 +48,29 @@
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
     "@semantic-release/github": "^12.0.2",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^25.0.10",
+    "@types/react": "^19.2.13",
+    "@types/react-dom": "^19.2.3",
     "@typescript-eslint/eslint-plugin": "^8.53.1",
     "@typescript-eslint/parser": "^8.53.1",
     "@vitest/coverage-v8": "4.0.18",
+    "@vitest/ui": "^4.0.18",
+    "concurrently": "^9.2.1",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.5",
     "husky": "^9.1.7",
     "jiti": "^2.6.1",
+    "jsdom": "^28.1.0",
     "lint-staged": "^16.2.7",
     "prettier": "^3.8.1",
     "prettier-plugin-organize-imports": "^4.3.0",
+    "prettier-plugin-tailwindcss": "^0.7.2",
+    "react": "19.2.3",
     "rollup": "^4.56.0",
     "semantic-release": "^25.0.2",
     "typescript": "^5.9.3",
