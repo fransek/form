@@ -21,7 +21,7 @@ import {
   validate,
   validateAsync,
   validateIfDirty,
-} from "form";
+} from "@fransek/form";
 import { useRef, useState } from "react";
 import { Input } from "../components/Input";
 import {

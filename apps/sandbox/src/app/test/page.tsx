@@ -1,6 +1,6 @@
 "use client";
 
-import { Field, createFieldState } from "form";
+import { Field, createFieldState } from "@fransek/form";
 import { useState } from "react";
 import { Input } from "../../components/Input";
 
