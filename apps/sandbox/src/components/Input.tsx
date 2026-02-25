@@ -1,12 +1,12 @@
 "use client";
+import { FieldProps } from "@/lib/component";
 import { cn, useFieldId } from "@/lib/utils";
 import { ErrorMessage } from "./ErrorMessage";
+import { FieldContainer } from "./FieldContainer";
+import { Label } from "./Label";
 
-export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label?: string;
-  errorMessage?: React.ReactNode;
-  isValidating?: boolean;
-  isValidatingMessage?: React.ReactNode;
+export interface InputProps
+  extends React.InputHTMLAttributes<HTMLInputElement>, FieldProps {
   button?: React.ReactNode;
 }
 
@@ -23,12 +23,8 @@ export function Input({
   const { id, errorId } = useFieldId(_id);
 
   return (
-    <div>
-      {label && (
-        <label htmlFor={id} className="mb-1 block font-bold">
-          {label}
-        </label>
-      )}
+    <FieldContainer>
+      {label && <Label htmlFor={id}>{label}</Label>}
       <div className="flex items-stretch gap-2">
         <input
           id={id}
@@ -52,6 +48,6 @@ export function Input({
       >
         {errorMessage}
       </ErrorMessage>
-    </div>
+    </FieldContainer>
   );
 }

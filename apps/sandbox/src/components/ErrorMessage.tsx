@@ -12,11 +12,11 @@ export function ErrorMessage({
   isValidatingMessage = "Validating...",
 }: ErrorMessageProps) {
   return (
-    <div id={id}>
+    <div id={id} className="contents">
       {children ? (
-        <p className="text-error-foreground">{children}</p>
+        <p className="text-error-foreground text-sm">{children}</p>
       ) : isValidating ? (
-        <p className="text-primary-foreground">{isValidatingMessage}</p>
+        <p className="text-primary-foreground text-sm">{isValidatingMessage}</p>
       ) : null}
     </div>
   );

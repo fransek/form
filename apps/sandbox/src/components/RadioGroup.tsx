@@ -1,12 +1,12 @@
+import { FieldProps } from "@/lib/component";
 import { cn, useFieldId } from "@/lib/utils";
 import { ErrorMessage } from "./ErrorMessage";
+import { FieldContainer } from "./FieldContainer";
+import { Label } from "./Label";
 
-export interface RadioGroupProps extends React.HTMLAttributes<HTMLDivElement> {
-  label: string;
+export interface RadioGroupProps
+  extends React.HTMLAttributes<HTMLDivElement>, FieldProps {
   children: React.ReactNode;
-  errorMessage?: React.ReactNode;
-  isValidating?: boolean;
-  isValidatingMessage?: React.ReactNode;
   horizontal?: boolean;
 }
 
@@ -25,18 +25,16 @@ export function RadioGroup({
   const labelId = `${id}-label`;
 
   return (
-    <div
+    <FieldContainer
       role="radiogroup"
       id={id}
-      className={className}
+      className={cn(className)}
       aria-labelledby={labelId}
       aria-describedby={errorId}
       aria-invalid={!!errorMessage}
       {...props}
     >
-      <span className="mb-1 block font-bold" id={labelId}>
-        {label}
-      </span>
+      <Label id={labelId}>{label}</Label>
       <div
         className={cn("flex flex-col gap-2", horizontal && "flex-row gap-4")}
       >
@@ -49,6 +47,6 @@ export function RadioGroup({
       >
         {errorMessage}
       </ErrorMessage>
-    </div>
+    </FieldContainer>
   );
 }

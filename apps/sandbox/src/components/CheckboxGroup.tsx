@@ -1,13 +1,13 @@
+import { FieldProps } from "@/lib/component";
 import { cn, useFieldId } from "@/lib/utils";
 import { createContext, useContext } from "react";
 import { ErrorMessage } from "./ErrorMessage";
+import { FieldContainer } from "./FieldContainer";
+import { Label } from "./Label";
 
-export interface CheckboxGroupProps extends React.HTMLAttributes<HTMLDivElement> {
-  label: string;
+export interface CheckboxGroupProps
+  extends React.HTMLAttributes<HTMLDivElement>, FieldProps {
   children: React.ReactNode;
-  errorMessage?: React.ReactNode;
-  isValidating?: boolean;
-  isValidatingMessage?: React.ReactNode;
   horizontal?: boolean;
 }
 
@@ -26,16 +26,14 @@ export function CheckboxGroup({
   const labelId = `${id}-label`;
 
   return (
-    <div
+    <FieldContainer
       role="group"
       id={id}
-      className={className}
+      className={cn(className)}
       aria-labelledby={labelId}
       {...props}
     >
-      <span className="mb-1 block font-bold" id={labelId}>
-        {label}
-      </span>
+      <Label id={labelId}>{label}</Label>
       <div
         className={cn("flex flex-col gap-2", horizontal && "flex-row gap-4")}
       >
@@ -55,7 +53,7 @@ export function CheckboxGroup({
       >
         {errorMessage}
       </ErrorMessage>
-    </div>
+    </FieldContainer>
   );
 }
 

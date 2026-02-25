@@ -1,6 +1,9 @@
 "use client";
+import { FieldProps } from "@/lib/component";
 import { cn, useFieldId } from "@/lib/utils";
 import { ErrorMessage } from "./ErrorMessage";
+import { FieldContainer } from "./FieldContainer";
+import { Label } from "./Label";
 
 export interface SelectOption {
   label: string;
@@ -10,13 +13,8 @@ export interface SelectOption {
 export type SelectOptionValue<T extends Readonly<SelectOption[]>> =
   T[number]["value"];
 
-export interface SelectProps<
-  T extends Readonly<SelectOption[]>,
-> extends React.SelectHTMLAttributes<HTMLSelectElement> {
-  label?: string;
-  errorMessage?: React.ReactNode;
-  isValidating?: boolean;
-  isValidatingMessage?: React.ReactNode;
+export interface SelectProps<T extends Readonly<SelectOption[]>>
+  extends React.SelectHTMLAttributes<HTMLSelectElement>, FieldProps {
   options: T;
   onValueChange?: (value: SelectOptionValue<T>) => void;
   disablePlaceholderOption?: boolean;
@@ -37,12 +35,8 @@ export function Select<T extends Readonly<SelectOption[]>>({
   const { id, errorId } = useFieldId(_id);
 
   return (
-    <div>
-      {label && (
-        <label htmlFor={id} className="mb-1 block font-bold">
-          {label}
-        </label>
-      )}
+    <FieldContainer>
+      {label && <Label htmlFor={id}>{label}</Label>}
       <select
         id={id}
         className={cn(
@@ -80,6 +74,6 @@ export function Select<T extends Readonly<SelectOption[]>>({
       >
         {errorMessage}
       </ErrorMessage>
-    </div>
+    </FieldContainer>
   );
 }
