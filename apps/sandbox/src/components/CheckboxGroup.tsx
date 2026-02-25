@@ -33,7 +33,9 @@ export function CheckboxGroup({
       aria-labelledby={labelId}
       {...props}
     >
-      <Label id={labelId}>{label}</Label>
+      <Label element="span" id={labelId}>
+        {label}
+      </Label>
       <div
         className={cn("flex flex-col gap-2", horizontal && "flex-row gap-4")}
       >

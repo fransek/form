@@ -1,10 +1,15 @@
 import { cn } from "@/lib/utils";
 
+export interface LabelProps extends React.LabelHTMLAttributes<HTMLLabelElement> {
+  element?: "label" | "span";
+}
+
 export function Label({
   className,
+  element: Element = "label",
   ...props
-}: React.LabelHTMLAttributes<HTMLLabelElement>) {
+}: LabelProps) {
   return (
-    <label className={cn("block text-sm font-bold", className)} {...props} />
+    <Element className={cn("block text-sm font-bold", className)} {...props} />
   );
 }
