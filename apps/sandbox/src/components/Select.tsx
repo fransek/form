@@ -46,10 +46,10 @@ export function Select<T extends Readonly<SelectOption[]>>({
       <select
         id={id}
         className={cn(
-          "focus:border-foreground bg-background w-full rounded-lg border border-gray-500 p-2 transition-colors outline-none",
-          props.value === "" && "text-gray-500",
-          isValidating && "border-blue-500",
-          errorMessage && "border-red-500",
+          "focus:border-foreground bg-background w-full rounded-lg border p-2 transition-colors outline-none",
+          props.value === "" && "text-muted-foreground",
+          isValidating && "border-primary-foreground",
+          errorMessage && "border-error-foreground",
           className,
         )}
         aria-invalid={!!errorMessage}
@@ -66,7 +66,7 @@ export function Select<T extends Readonly<SelectOption[]>>({
             value={option.value}
             disabled={disablePlaceholderOption && option.value === ""}
             className={cn(
-              option.value === "" ? "text-gray-500" : "text-foreground",
+              option.value === "" ? "text-muted-foreground" : "text-foreground",
             )}
           >
             {option.label}

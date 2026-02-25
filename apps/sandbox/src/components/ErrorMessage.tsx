@@ -14,9 +14,9 @@ export function ErrorMessage({
   return (
     <div id={id}>
       {children ? (
-        <p className="text-red-500">{children}</p>
+        <p className="text-error-foreground">{children}</p>
       ) : isValidating ? (
-        <p className="text-blue-500">{isValidatingMessage}</p>
+        <p className="text-primary-foreground">{isValidatingMessage}</p>
       ) : null}
     </div>
   );

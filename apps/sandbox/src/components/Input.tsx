@@ -33,9 +33,9 @@ export function Input({
         <input
           id={id}
           className={cn(
-            "focus:border-foreground w-full rounded-lg border border-gray-500 p-2 transition-colors outline-none placeholder:text-gray-500",
-            isValidating && "border-blue-500",
-            errorMessage && "border-red-500",
+            "focus:border-foreground placeholder:text-muted-foreground w-full rounded-lg border p-2 transition-colors outline-none",
+            isValidating && "border-primary-foreground",
+            errorMessage && "border-error-foreground",
             className,
           )}
           aria-invalid={!!errorMessage}
