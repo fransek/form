@@ -1,6 +1,5 @@
 "use client";
-import { FieldProps } from "@/lib/component";
-import { cn, useFieldId } from "@/lib/utils";
+import { cn, FieldProps, useFieldId } from "@/lib/utils";
 import { ErrorMessage } from "./ErrorMessage";
 import { FieldContainer } from "./FieldContainer";
 import { Label } from "./Label";
@@ -24,8 +23,8 @@ export function Select<T extends Readonly<SelectOption[]>>({
   id: _id,
   label,
   errorMessage,
-  isValidating = false,
-  isValidatingMessage = "Validating...",
+  isValidating,
+  isValidatingMessage,
   className,
   options,
   onValueChange,

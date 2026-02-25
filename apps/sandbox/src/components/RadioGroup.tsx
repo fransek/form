@@ -1,5 +1,4 @@
-import { FieldProps } from "@/lib/component";
-import { cn, useFieldId } from "@/lib/utils";
+import { cn, FieldProps, useFieldId } from "@/lib/utils";
 import { ErrorMessage } from "./ErrorMessage";
 import { FieldContainer } from "./FieldContainer";
 import { Label } from "./Label";
@@ -15,14 +14,13 @@ export function RadioGroup({
   label,
   children,
   errorMessage,
-  isValidating = false,
-  isValidatingMessage = "Validating...",
+  isValidating,
+  isValidatingMessage,
   horizontal = false,
   className,
   ...props
 }: RadioGroupProps) {
-  const { id, errorId } = useFieldId(_id);
-  const labelId = `${id}-label`;
+  const { id, errorId, labelId } = useFieldId(_id);
 
   return (
     <FieldContainer

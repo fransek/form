@@ -1,5 +1,4 @@
-import { FieldProps } from "@/lib/component";
-import { cn, useFieldId } from "@/lib/utils";
+import { cn, FieldProps, useFieldId } from "@/lib/utils";
 import { createContext, useContext } from "react";
 import { ErrorMessage } from "./ErrorMessage";
 import { FieldContainer } from "./FieldContainer";
@@ -16,14 +15,13 @@ export function CheckboxGroup({
   label,
   children,
   errorMessage,
-  isValidating = false,
-  isValidatingMessage = "Validating...",
+  isValidating,
+  isValidatingMessage,
   horizontal = false,
   className,
   ...props
 }: CheckboxGroupProps) {
-  const { id, errorId } = useFieldId(_id);
-  const labelId = `${id}-label`;
+  const { id, errorId, labelId } = useFieldId(_id);
 
   return (
     <FieldContainer
