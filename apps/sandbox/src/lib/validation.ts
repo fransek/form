@@ -49,13 +49,13 @@ export const validateRepeatPassword = (password: string) => (value: string) => {
 
 export const validateHobbies = (value: HobbyOption[]) => {
   if (value.length < 1 || value.length > 2) {
-    return "Please select 1-2 hobbies";
+    return "Select 1-2 hobbies";
   }
 };
 
 export const validateFavoriteColor = (value: string) => {
   if (!value) {
-    return "Color is required";
+    return "Favorite color is required";
   }
 };
 
@@ -68,5 +68,11 @@ export const validateGender = (value: GenderOption | "") => {
 export const validateFavoriteFruit = (value: FavoriteFruitOption) => {
   if (!value) {
     return "Favorite fruit is required";
+  }
+};
+
+export const validateTermsAccepted = (value: boolean) => {
+  if (!value) {
+    return "You must accept the terms and conditions";
   }
 };
