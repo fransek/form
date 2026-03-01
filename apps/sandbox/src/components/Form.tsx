@@ -1,4 +1,5 @@
 "use client";
+
 import {
   FavoriteFruitOption,
   GenderOption,
@@ -15,15 +16,13 @@ import {
   validateAsync,
   validateIfDirty,
 } from "@fransek/form";
-import {
-  Button,
-  Checkbox,
-  CheckboxGroup,
-  Input,
-  Radio,
-  RadioGroup,
-  Select,
-} from "@fransek/ui";
+import { Button } from "@fransek/ui/button";
+import { Checkbox } from "@fransek/ui/checkbox";
+import { CheckboxGroup } from "@fransek/ui/checkbox-group";
+import { Input } from "@fransek/ui/input";
+import { Radio } from "@fransek/ui/radio";
+import { RadioGroup } from "@fransek/ui/radio-group";
+import { Select } from "@fransek/ui/select";
 import { Trash } from "lucide-react";
 import { useRef, useState } from "react";
 import {
