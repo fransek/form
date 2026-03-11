@@ -17,9 +17,9 @@ import {
 import {
   Field,
   createFieldState,
+  isFormValid,
   useFormFocus,
-  validate,
-  validateAsync,
+  validateForm,
   validateIfDirty,
 } from "@fransek/form";
 import { useRef, useState } from "react";
@@ -60,38 +60,53 @@ export default function Home() {
     }
     setIsSubmitting(true);
 
+    const validatedFields = await validateForm(
+      {
+        username: form.username,
+        email: form.email,
+        gender: form.gender,
+        hobbies: form.hobbies,
+        favoriteFruit: form.favoriteFruit,
+        password: form.password,
+        repeatPassword: form.repeatPassword,
+      },
+      {
+        username: [validateUsername, validateUsernameAsync],
+        email: [validateEmail],
+        gender: [validateGender],
+        hobbies: [validateHobbies],
+        favoriteFruit: [validateFavoriteFruit],
+        password: [validatePassword],
+        repeatPassword: [validateRepeatPassword(form.password.value)],
+      },
+    );
+
     const newForm = {
-      username: await validateAsync(
-        form.username,
-        validateUsername,
-        validateUsernameAsync,
-      ),
-      email: validate(form.email, validateEmail),
-      gender: validate(form.gender, validateGender),
-      hobbies: validate(form.hobbies, validateHobbies),
-      favoriteFruit: validate(form.favoriteFruit, validateFavoriteFruit),
-      favoriteColors: form.favoriteColors.map((color) => ({
-        ...color,
-        state: validate(color.state, validateFavoriteColor),
-      })),
-      password: validate(form.password, validatePassword),
-      repeatPassword: validate(
-        form.repeatPassword,
-        validateRepeatPassword(form.password.value),
-      ),
+      ...validatedFields,
+      favoriteColors: form.favoriteColors.map((color) => {
+        const errorMessage = validateFavoriteColor(color.state.value);
+        return {
+          ...color,
+          state: {
+            ...color.state,
+            errorMessage,
+            isTouched: true,
+            isDirty: true,
+            isValid: !errorMessage,
+            isValidating: false,
+          },
+        };
+      }),
     };
 
     setForm(newForm);
     setIsSubmitting(false);
 
-    const isFormValid = Object.values(newForm).every((field) => {
-      if (Array.isArray(field)) {
-        return field.every((f) => f.state.isValid);
-      }
-      return field.isValid;
-    });
+    const isValid =
+      isFormValid(validatedFields) &&
+      newForm.favoriteColors.every((field) => field.state.isValid);
 
-    if (isFormValid) {
+    if (isValid) {
       alert("Form submitted successfully!");
     } else {
       focusFirstError();

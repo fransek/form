@@ -90,3 +90,39 @@ export async function validateIfDirtyAsync<T>(
 
   return validateAsync(state, ...validators);
 }
+
+export type FormState<TValues extends Record<string, unknown>> = {
+  [K in keyof TValues]: FieldState<TValues[K]>;
+};
+
+export type FormValidators<TValues extends Record<string, unknown>> = {
+  [K in keyof TValues]?: Array<Validator<TValues[K]> | undefined>;
+};
+
+export async function validateForm<TValues extends Record<string, unknown>>(
+  form: FormState<TValues>,
+  validators: FormValidators<TValues>,
+): Promise<FormState<TValues>> {
+  const entries = await Promise.all(
+    Object.entries(form).map(async ([key, state]) => {
+      const fieldValidators =
+        validators[key as keyof TValues] ??
+        ([] as Array<Validator<TValues[keyof TValues]> | undefined>);
+
+      const validatedState = await validateAsync(
+        state as FieldState<TValues[keyof TValues]>,
+        ...fieldValidators,
+      );
+
+      return [key, validatedState] as const;
+    }),
+  );
+
+  return Object.fromEntries(entries) as FormState<TValues>;
+}
+
+export function isFormValid<TValues extends Record<string, unknown>>(
+  form: FormState<TValues>,
+): boolean {
+  return Object.values(form).every((field) => field.isValid);
+}
