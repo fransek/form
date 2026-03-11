@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   createFieldState,
+  isFormValid,
   validate,
   validateAsync,
+  validateForm,
   validateIfDirty,
   validateIfDirtyAsync,
 } from "./fieldState";
@@ -485,6 +487,66 @@ describe("fieldState", () => {
       state = { ...state, value: "this is way too long" };
       state = validate(state, required, minLength, maxLength);
       expect(state.errorMessage).toBe("Maximum 10 characters");
+    });
+  });
+
+  describe("validateForm", () => {
+    it("should validate all fields in the form", async () => {
+      const form = {
+        username: createFieldState("ab"),
+        email: createFieldState(""),
+      };
+
+      const result = await validateForm(form, {
+        username: [
+          (value) => (value.length < 3 ? "Minimum 3 characters" : undefined),
+        ],
+        email: [(value) => (value.includes("@") ? undefined : "Invalid email")],
+      });
+
+      expect(result.username.isValid).toBe(false);
+      expect(result.username.errorMessage).toBe("Minimum 3 characters");
+      expect(result.email.isValid).toBe(false);
+      expect(result.email.errorMessage).toBe("Invalid email");
+    });
+
+    it("should handle mixed sync and async validators", async () => {
+      const form = {
+        username: createFieldState("taken"),
+        email: createFieldState("test@example.com"),
+      };
+
+      const result = await validateForm(form, {
+        username: [
+          async (value) =>
+            value === "taken" ? "Username already taken" : undefined,
+        ],
+        email: [(value) => (value.includes("@") ? undefined : "Invalid email")],
+      });
+
+      expect(result.username.isValid).toBe(false);
+      expect(result.username.errorMessage).toBe("Username already taken");
+      expect(result.email.isValid).toBe(true);
+    });
+  });
+
+  describe("isFormValid", () => {
+    it("should return true when all fields are valid", () => {
+      const form = {
+        username: createFieldState("valid"),
+        email: createFieldState("test@example.com"),
+      };
+
+      expect(isFormValid(form)).toBe(true);
+    });
+
+    it("should return false when at least one field is invalid", () => {
+      const form = {
+        username: createFieldState("valid"),
+        email: { ...createFieldState("bad"), isValid: false },
+      };
+
+      expect(isFormValid(form)).toBe(false);
     });
   });
 });
