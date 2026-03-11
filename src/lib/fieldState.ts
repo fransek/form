@@ -105,9 +105,7 @@ export async function validateForm<TValues extends Record<string, unknown>>(
 ): Promise<FormState<TValues>> {
   const entries = await Promise.all(
     Object.entries(form).map(async ([key, state]) => {
-      const fieldValidators =
-        validators[key as keyof TValues] ??
-        ([] as Array<Validator<TValues[keyof TValues]> | undefined>);
+      const fieldValidators = validators[key as keyof TValues] ?? [];
 
       const validatedState = await validateAsync(
         state as FieldState<TValues[keyof TValues]>,
