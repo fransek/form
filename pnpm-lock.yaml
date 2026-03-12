@@ -120,8 +120,8 @@ importers:
         specifier: ^1.2.0
         version: 1.2.0(@types/react@19.2.14)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@fransek/ui':
-        specifier: ^0.2.6
-        version: 0.2.6(@base-ui/react@1.2.0(@types/react@19.2.14)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(clsx@2.1.1)(lucide-react@0.575.0(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(tailwind-merge@3.5.0)(tailwindcss@4.2.1)
+        specifier: ^0.7.0
+        version: 0.7.0(@base-ui/react@1.2.0(@types/react@19.2.14)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(clsx@2.1.1)(lucide-react@0.575.0(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(tailwind-merge@3.5.0)(tailwindcss@4.2.1)
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -672,16 +672,23 @@ packages:
   '@formatjs/intl-localematcher@0.6.2':
     resolution: {integrity: sha512-XOMO2Hupl0wdd172Y06h6kLpBz6Dv+J4okPLl4LPtzbr8f66WbIoy4ev98EBuZ6ZK4h5ydTN6XneT4QVpD7cdA==}
 
-  '@fransek/ui@0.2.6':
-    resolution: {integrity: sha512-Lr9lXL7gFxafnMUv0FWehG7Eu7ICBNiRZ7ShengqEoc1/+gWWFjRb7nARmwDjw+XyJaNJhRr6pWRFBwg2+tnUw==}
+  '@fransek/ui@0.7.0':
+    resolution: {integrity: sha512-9hXu3rkdE2kG9jmkXPWKi7vDLX9D9r0a9Dpn1HSsjPjoVvlcbCDamPs8jbQ4R06b8+eUJmP0T76w7vKvHEkxmg==}
     peerDependencies:
       '@base-ui/react': ^1.2.0
       clsx: ^2.0.0
+      date-fns: ^4.0.0
       lucide-react: ^0.575.0
-      react: '>=18.0.0'
-      react-dom: '>=18.0.0'
+      react: '>=19.0.0'
+      react-day-picker: ^9.0.0
+      react-dom: '>=19.0.0'
       tailwind-merge: ^3.0.0
       tailwindcss: ^4.0.0
+    peerDependenciesMeta:
+      date-fns:
+        optional: true
+      react-day-picker:
+        optional: true
 
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
@@ -5694,7 +5701,7 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  '@fransek/ui@0.2.6(@base-ui/react@1.2.0(@types/react@19.2.14)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(clsx@2.1.1)(lucide-react@0.575.0(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(tailwind-merge@3.5.0)(tailwindcss@4.2.1)':
+  '@fransek/ui@0.7.0(@base-ui/react@1.2.0(@types/react@19.2.14)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(clsx@2.1.1)(lucide-react@0.575.0(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(tailwind-merge@3.5.0)(tailwindcss@4.2.1)':
     dependencies:
       '@base-ui/react': 1.2.0(@types/react@19.2.14)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       clsx: 2.1.1
