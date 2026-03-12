@@ -10,5 +10,13 @@ export function useFieldId(id?: string) {
   const reactId = useId();
   const uid = id ?? reactId;
   const errorId = `${uid}-error`;
-  return { id: uid, errorId };
+  const labelId = `${uid}-label`;
+  return { id: uid, errorId, labelId };
+}
+
+export interface FieldProps {
+  label?: string;
+  errorMessage?: React.ReactNode;
+  isValidating?: boolean;
+  isValidatingMessage?: React.ReactNode;
 }
