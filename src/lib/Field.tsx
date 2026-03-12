@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useFormContext } from "./FormContext";
 import { FieldProps } from "./types";
 
 export function Field<T>({
@@ -10,6 +11,8 @@ export function Field<T>({
   validateOnChangeAsync,
   validateOnBlur,
   validateOnBlurAsync,
+  validateOnSubmit,
+  validateOnSubmitAsync,
   debounceMs = 500,
   validateOnTouch = false,
 }: FieldProps<T>) {
@@ -22,6 +25,72 @@ export function Field<T>({
   const isValidatingOnChangeRef = useRef(false);
 
   stateRef.current = state;
+
+  // Keep submit validator refs up to date without re-registering
+  const validateOnSubmitRef = useRef(validateOnSubmit);
+  const validateOnSubmitAsyncRef = useRef(validateOnSubmitAsync);
+  const onChangeRef = useRef(onChange);
+  validateOnSubmitRef.current = validateOnSubmit;
+  validateOnSubmitAsyncRef.current = validateOnSubmitAsync;
+  onChangeRef.current = onChange;
+
+  const formContext = useFormContext();
+
+  useEffect(() => {
+    if (!formContext) return;
+
+    const submitValidator = async (): Promise<boolean> => {
+      if (!validateOnSubmitRef.current && !validateOnSubmitAsyncRef.current) {
+        return true;
+      }
+
+      const value = stateRef.current.value;
+      const syncError = validateOnSubmitRef.current?.(value);
+
+      if (syncError) {
+        onChangeRef.current({
+          ...stateRef.current,
+          errorMessage: syncError,
+          isDirty: true,
+          isTouched: true,
+          isValid: false,
+          isValidating: false,
+        });
+        return false;
+      }
+
+      if (validateOnSubmitAsyncRef.current) {
+        onChangeRef.current({
+          ...stateRef.current,
+          isDirty: true,
+          isTouched: true,
+          isValidating: true,
+        });
+        const asyncError = await validateOnSubmitAsyncRef.current(value);
+        onChangeRef.current({
+          ...stateRef.current,
+          errorMessage: asyncError,
+          isDirty: true,
+          isTouched: true,
+          isValid: !asyncError,
+          isValidating: false,
+        });
+        return !asyncError;
+      }
+
+      onChangeRef.current({
+        ...stateRef.current,
+        errorMessage: undefined,
+        isDirty: true,
+        isTouched: true,
+        isValid: true,
+        isValidating: false,
+      });
+      return true;
+    };
+
+    return formContext.registerValidator(submitValidator);
+  }, [formContext]);
 
   useEffect(() => {
     return () => {

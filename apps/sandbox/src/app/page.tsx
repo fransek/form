@@ -16,10 +16,9 @@ import {
 } from "@/lib/options";
 import {
   Field,
+  Form,
   createFieldState,
   useFormFocus,
-  validate,
-  validateAsync,
   validateIfDirty,
 } from "@fransek/form";
 import { useRef, useState } from "react";
@@ -53,58 +52,26 @@ export default function Home() {
 
   const { focusFirstError, formRef } = useFormFocus();
 
-  const onSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (isSubmitting) {
-      return;
-    }
-    setIsSubmitting(true);
-
-    const newForm = {
-      username: await validateAsync(
-        form.username,
-        validateUsername,
-        validateUsernameAsync,
-      ),
-      email: validate(form.email, validateEmail),
-      gender: validate(form.gender, validateGender),
-      hobbies: validate(form.hobbies, validateHobbies),
-      favoriteFruit: validate(form.favoriteFruit, validateFavoriteFruit),
-      favoriteColors: form.favoriteColors.map((color) => ({
-        ...color,
-        state: validate(color.state, validateFavoriteColor),
-      })),
-      password: validate(form.password, validatePassword),
-      repeatPassword: validate(
-        form.repeatPassword,
-        validateRepeatPassword(form.password.value),
-      ),
-    };
-
-    setForm(newForm);
-    setIsSubmitting(false);
-
-    const isFormValid = Object.values(newForm).every((field) => {
-      if (Array.isArray(field)) {
-        return field.every((f) => f.state.isValid);
-      }
-      return field.isValid;
-    });
-
-    if (isFormValid) {
-      alert("Form submitted successfully!");
-    } else {
-      focusFirstError();
-    }
-  };
-
   return (
     <main className="mx-auto max-w-xl py-20">
-      <form ref={formRef} className="flex flex-col gap-4" onSubmit={onSubmit}>
+      <Form
+        ref={formRef}
+        className="flex flex-col gap-4"
+        onValidSubmit={() => {
+          setIsSubmitting(false);
+          alert("Form submitted successfully!");
+        }}
+        onInvalidSubmit={() => {
+          setIsSubmitting(false);
+          focusFirstError();
+        }}
+        onSubmit={() => setIsSubmitting(true)}
+      >
         <Field
           state={form.email}
           onChange={(email) => setForm((prev) => ({ ...prev, email }))}
           validateOnChange={validateEmail}
+          validateOnSubmit={validateEmail}
         >
           {(props) => (
             <Input
@@ -122,6 +89,8 @@ export default function Home() {
           onChange={(name) => setForm((prev) => ({ ...prev, username: name }))}
           validateOnChange={validateUsername}
           validateOnChangeAsync={validateUsernameAsync}
+          validateOnSubmit={validateUsername}
+          validateOnSubmitAsync={validateUsernameAsync}
           validateOnTouch
         >
           {(props) => (
@@ -140,6 +109,7 @@ export default function Home() {
           state={form.gender}
           onChange={(gender) => setForm((prev) => ({ ...prev, gender }))}
           validateOnChange={validateGender}
+          validateOnSubmit={validateGender}
         >
           {(props) => (
             <RadioGroup
@@ -165,6 +135,7 @@ export default function Home() {
           state={form.hobbies}
           onChange={(hobbies) => setForm((prev) => ({ ...prev, hobbies }))}
           validateOnChange={validateHobbies}
+          validateOnSubmit={validateHobbies}
         >
           {(props) => (
             <CheckboxGroup
@@ -207,6 +178,7 @@ export default function Home() {
               }))
             }
             validateOnChange={validateFavoriteColor}
+            validateOnSubmit={validateFavoriteColor}
           >
             {(props) => (
               <Input
@@ -269,6 +241,7 @@ export default function Home() {
             setForm((prev) => ({ ...prev, favoriteFruit }))
           }
           validateOnChange={validateFavoriteFruit}
+          validateOnSubmit={validateFavoriteFruit}
         >
           {(props) => (
             <Select
@@ -296,6 +269,7 @@ export default function Home() {
             }));
           }}
           validateOnChange={validatePassword}
+          validateOnSubmit={validatePassword}
         >
           {(props) => (
             <Input
@@ -315,6 +289,7 @@ export default function Home() {
             setForm((prev) => ({ ...prev, repeatPassword }))
           }
           validateOnChange={validateRepeatPassword(form.password.value)}
+          validateOnSubmit={validateRepeatPassword(form.password.value)}
         >
           {(props) => (
             <Input
@@ -331,7 +306,7 @@ export default function Home() {
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? "Submitting..." : "Submit"}
         </Button>
-      </form>
+      </Form>
     </main>
   );
 }
