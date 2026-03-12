@@ -27,6 +27,10 @@ export interface FieldProps<T> {
   validateOnChangeAsync?: AsyncValidator<T>;
   validateOnBlur?: SyncValidator<T>;
   validateOnBlurAsync?: AsyncValidator<T>;
+  /** Sync validator run when the parent Form is submitted. */
+  validateOnSubmit?: SyncValidator<T>;
+  /** Async validator run when the parent Form is submitted. */
+  validateOnSubmitAsync?: AsyncValidator<T>;
   validateOnTouch?: boolean;
   debounceMs?: number;
 }
