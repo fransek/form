@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useFormContext } from "./FormContext";
 import { FieldProps } from "./types";
 
 export function Field<T>({
@@ -10,6 +11,8 @@ export function Field<T>({
   validateOnChangeAsync,
   validateOnBlur,
   validateOnBlurAsync,
+  validateOnSubmit,
+  validateOnSubmitAsync,
   debounceMs = 500,
   validateOnTouch = false,
 }: FieldProps<T>) {
@@ -20,6 +23,7 @@ export function Field<T>({
   const validationId = useRef(0);
   const isValidatingOnBlurRef = useRef(false);
   const isValidatingOnChangeRef = useRef(false);
+  const formContext = useFormContext();
 
   stateRef.current = state;
 
@@ -30,6 +34,52 @@ export function Field<T>({
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (!formContext || (!validateOnSubmit && !validateOnSubmitAsync)) {
+      return;
+    }
+
+    return formContext.registerSubmitValidation({
+      setPending: () => {
+        onChange({
+          ...stateRef.current,
+          isDirty: true,
+          isTouched: true,
+          isValidating: true,
+        });
+      },
+      validate: async () => {
+        const submitErrorMessage = validateOnSubmit?.(stateRef.current.value);
+
+        if (submitErrorMessage) {
+          return {
+            ...stateRef.current,
+            errorMessage: submitErrorMessage,
+            isDirty: true,
+            isTouched: true,
+            isValid: false,
+            isValidating: false,
+          };
+        }
+
+        const asyncSubmitErrorMessage = await validateOnSubmitAsync?.(
+          stateRef.current.value,
+        );
+        const errorMessage = submitErrorMessage || asyncSubmitErrorMessage;
+
+        return {
+          ...stateRef.current,
+          errorMessage,
+          isDirty: true,
+          isTouched: true,
+          isValid: !errorMessage,
+          isValidating: false,
+        };
+      },
+      commit: onChange,
+    });
+  }, [formContext, onChange, validateOnSubmit, validateOnSubmitAsync]);
 
   function handleChange(value: T) {
     if (validationTimeoutRef.current) {
