@@ -36,9 +36,31 @@ export function Field<T>({
   }, []);
 
   useEffect(() => {
-    if (!formContext || (!validateOnSubmit && !validateOnSubmitAsync)) {
+    if (
+      !formContext ||
+      !(
+        validateOnSubmit ||
+        validateOnSubmitAsync ||
+        validateOnChange ||
+        validateOnChangeAsync ||
+        validateOnBlur ||
+        validateOnBlurAsync
+      )
+    ) {
       return;
     }
+
+    const syncValidators = [
+      validateOnChange,
+      validateOnBlur,
+      validateOnSubmit,
+    ].filter(Boolean);
+
+    const asyncValidators = [
+      validateOnChangeAsync,
+      validateOnBlurAsync,
+      validateOnSubmitAsync,
+    ].filter(Boolean);
 
     return formContext.registerSubmitValidation({
       setPending: () => {
@@ -50,35 +72,59 @@ export function Field<T>({
         });
       },
       validate: async () => {
-        const submitErrorMessage = validateOnSubmit?.(stateRef.current.value);
+        const value = stateRef.current.value;
 
-        if (submitErrorMessage) {
+        for (const validator of syncValidators) {
+          const errorMessage = validator?.(value);
+          if (errorMessage) {
+            return {
+              ...stateRef.current,
+              errorMessage,
+              isDirty: true,
+              isTouched: true,
+              isValid: false,
+              isValidating: false,
+            };
+          }
+        }
+
+        if (!asyncValidators.length) {
           return {
             ...stateRef.current,
-            errorMessage: submitErrorMessage,
+            errorMessage: undefined,
             isDirty: true,
             isTouched: true,
-            isValid: false,
+            isValid: true,
             isValidating: false,
           };
         }
 
-        const asyncSubmitErrorMessage = await validateOnSubmitAsync?.(
-          stateRef.current.value,
+        const asyncErrorMessages = await Promise.all(
+          asyncValidators.map((validator) => validator?.(value)),
         );
+        const asyncErrorMessage = asyncErrorMessages.find(Boolean);
 
         return {
           ...stateRef.current,
-          errorMessage: asyncSubmitErrorMessage,
+          errorMessage: asyncErrorMessage,
           isDirty: true,
           isTouched: true,
-          isValid: !asyncSubmitErrorMessage,
+          isValid: !asyncErrorMessage,
           isValidating: false,
         };
       },
       commit: onChange,
     });
-  }, [formContext, onChange, validateOnSubmit, validateOnSubmitAsync]);
+  }, [
+    formContext,
+    onChange,
+    validateOnBlur,
+    validateOnBlurAsync,
+    validateOnChange,
+    validateOnChangeAsync,
+    validateOnSubmit,
+    validateOnSubmitAsync,
+  ]);
 
   function handleChange(value: T) {
     if (validationTimeoutRef.current) {

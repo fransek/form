@@ -148,4 +148,102 @@ describe("Form", () => {
     expect(form).toHaveAttribute("novalidate");
     expect(ref.current).toBe(form);
   });
+
+  it("runs change validators on submit", async () => {
+    const user = userEvent.setup();
+    const validator = vi.fn((value: string) =>
+      value ? undefined : "Required on change",
+    );
+
+    function TestForm() {
+      const [field, setField] = useState(createFieldState(""));
+      return (
+        <Form>
+          <Field state={field} onChange={setField} validateOnChange={validator}>
+            {({ handleChange, isValidating, errorMessage, value }) => (
+              <input
+                data-testid="field"
+                data-errormessage={errorMessage ?? ""}
+                data-isvalidating={isValidating}
+                onChange={(e) => handleChange(e.target.value)}
+                value={value}
+              />
+            )}
+          </Field>
+          <button type="submit">Submit</button>
+        </Form>
+      );
+    }
+
+    render(<TestForm />);
+
+    await user.click(screen.getByText("Submit"));
+
+    await waitFor(() => {
+      expect(validator).toHaveBeenCalledWith("");
+      expect(screen.getByTestId("field")).toHaveAttribute(
+        "data-errormessage",
+        "Required on change",
+      );
+      expect(screen.getByTestId("field")).toHaveAttribute(
+        "data-isvalidating",
+        "false",
+      );
+    });
+  });
+
+  it("runs async change validators on submit and waits before commit", async () => {
+    const user = userEvent.setup();
+    const asyncValidation = createDeferred<React.ReactNode>();
+    const asyncValidator = vi.fn(() => asyncValidation.promise);
+
+    function TestForm() {
+      const [field, setField] = useState(createFieldState(""));
+      return (
+        <Form>
+          <Field
+            state={field}
+            onChange={setField}
+            validateOnChangeAsync={asyncValidator}
+          >
+            {({ handleChange, isValidating, errorMessage, value }) => (
+              <input
+                data-testid="field"
+                data-errormessage={errorMessage ?? ""}
+                data-isvalidating={isValidating}
+                onChange={(e) => handleChange(e.target.value)}
+                value={value}
+              />
+            )}
+          </Field>
+          <button type="submit">Submit</button>
+        </Form>
+      );
+    }
+
+    render(<TestForm />);
+
+    await user.click(screen.getByText("Submit"));
+
+    await waitFor(() => {
+      expect(asyncValidator).toHaveBeenCalledWith("");
+      expect(screen.getByTestId("field")).toHaveAttribute(
+        "data-isvalidating",
+        "true",
+      );
+    });
+
+    asyncValidation.resolve("Async required");
+
+    await waitFor(() => {
+      expect(screen.getByTestId("field")).toHaveAttribute(
+        "data-errormessage",
+        "Async required",
+      );
+      expect(screen.getByTestId("field")).toHaveAttribute(
+        "data-isvalidating",
+        "false",
+      );
+    });
+  });
 });
