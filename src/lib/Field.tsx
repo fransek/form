@@ -66,14 +66,13 @@ export function Field<T>({
         const asyncSubmitErrorMessage = await validateOnSubmitAsync?.(
           stateRef.current.value,
         );
-        const errorMessage = submitErrorMessage || asyncSubmitErrorMessage;
 
         return {
           ...stateRef.current,
-          errorMessage,
+          errorMessage: asyncSubmitErrorMessage,
           isDirty: true,
           isTouched: true,
-          isValid: !errorMessage,
+          isValid: !asyncSubmitErrorMessage,
           isValidating: false,
         };
       },
