@@ -8,14 +8,7 @@ import {
   genderOptions,
   hobbyOptions,
 } from "@/lib/options";
-import {
-  Field,
-  createFieldState,
-  useFormFocus,
-  validate,
-  validateAsync,
-  validateIfDirty,
-} from "@fransek/form";
+import { Field, Form, createFieldState, validateIfDirty } from "@fransek/form";
 import { Button } from "@fransek/ui/button";
 import { Checkbox } from "@fransek/ui/checkbox";
 import { CheckboxGroup } from "@fransek/ui/checkbox-group";
@@ -38,7 +31,7 @@ import {
   validateUsernameAsync,
 } from "../lib/validation";
 
-export function Form() {
+export function FormExample() {
   const favoriteColorId = useRef(0);
   const [form, setForm] = useState({
     email: createFieldState(""),
@@ -54,56 +47,19 @@ export function Form() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { focusFirstError, formRef } = useFormFocus();
-
-  const onSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (isSubmitting) {
-      return;
-    }
-    setIsSubmitting(true);
-
-    const newForm = {
-      username: await validateAsync(
-        form.username,
-        validateUsername,
-        validateUsernameAsync,
-      ),
-      email: validate(form.email, validateEmail),
-      gender: validate(form.gender, validateGender),
-      hobbies: validate(form.hobbies, validateHobbies),
-      favoriteFruit: validate(form.favoriteFruit, validateFavoriteFruit),
-      favoriteColors: form.favoriteColors.map((color) => ({
-        ...color,
-        state: validate(color.state, validateFavoriteColor),
-      })),
-      password: validate(form.password, validatePassword),
-      repeatPassword: validate(
-        form.repeatPassword,
-        validateRepeatPassword(form.password.value),
-      ),
-      termsAccepted: validate(form.termsAccepted, validateTermsAccepted),
-    };
-
-    setForm(newForm);
-    setIsSubmitting(false);
-
-    const isFormValid = Object.values(newForm).every((field) => {
-      if (Array.isArray(field)) {
-        return field.every((f) => f.state.isValid);
-      }
-      return field.isValid;
-    });
-
-    if (isFormValid) {
-      alert("Form submitted successfully!");
-    } else {
-      focusFirstError();
-    }
-  };
-
   return (
-    <form ref={formRef} className="flex flex-col gap-4" onSubmit={onSubmit}>
+    <Form
+      className="flex flex-col gap-4"
+      onSubmit={async (e, validate) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        const isValid = await validate();
+        if (isValid) {
+          alert("Form submitted successfully!");
+        }
+        setIsSubmitting(false);
+      }}
+    >
       <Field
         state={form.email}
         onChange={(email) => setForm((prev) => ({ ...prev, email }))}
@@ -118,6 +74,7 @@ export function Form() {
             onChange={(e) => props.handleChange(e.target.value)}
             isValidating={props.isValidating}
             value={props.value}
+            ref={props.ref}
             autoComplete="new-password" // Prevents Chrome autofill
           />
         )}
@@ -137,6 +94,7 @@ export function Form() {
             onChange={(e) => props.handleChange(e.target.value)}
             isValidating={props.isValidating}
             value={props.value}
+            ref={props.ref}
             isValidatingMessage="Checking availability..."
             autoComplete="new-password" // Prevents Chrome autofill
           />
@@ -152,6 +110,7 @@ export function Form() {
             label="Gender"
             errorMessage={props.errorMessage}
             value={props.value}
+            ref={props.ref}
             onValueChange={props.handleChange}
           >
             {genderOptions.map((option) => (
@@ -176,6 +135,7 @@ export function Form() {
             description="Please select 1-2 hobbies"
             errorMessage={props.errorMessage}
             value={props.value}
+            ref={props.ref}
             onValueChange={(value) =>
               props.handleChange(value as HobbyOption[])
             }
@@ -217,8 +177,9 @@ export function Form() {
               onChange={(e) => props.handleChange(e.target.value)}
               isValidating={props.isValidating}
               value={props.value}
+              ref={props.ref}
               autoComplete="new-password" // Prevents Chrome autofill
-              button={
+              rightAdornment={
                 form.favoriteColors.length > 1 ? (
                   <Button
                     size="sm"
@@ -281,6 +242,7 @@ export function Form() {
             onValueChange={props.handleChange}
             isValidating={props.isValidating}
             value={props.value}
+            ref={props.ref}
             placeholder="Select a fruit"
           />
         )}
@@ -307,6 +269,7 @@ export function Form() {
             onChange={(e) => props.handleChange(e.target.value)}
             isValidating={props.isValidating}
             value={props.value}
+            ref={props.ref}
             type="password"
             autoComplete="new-password" // Prevents Chrome autofill
           />
@@ -327,6 +290,7 @@ export function Form() {
             onChange={(e) => props.handleChange(e.target.value)}
             isValidating={props.isValidating}
             value={props.value}
+            ref={props.ref}
             type="password"
             autoComplete="new-password" // Prevents Chrome autofill
           />
@@ -347,12 +311,13 @@ export function Form() {
             onCheckedChange={props.handleChange}
             isValidating={props.isValidating}
             checked={props.value}
+            ref={props.ref}
           />
         )}
       </Field>
       <Button type="submit" disabled={isSubmitting}>
         {isSubmitting ? "Submitting..." : "Submit"}
       </Button>
-    </form>
+    </Form>
   );
 }

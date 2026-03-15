@@ -1,10 +1,10 @@
 "use client";
-import { Form } from "@/components/Form";
+import { FormExample } from "@/components/FormExample";
 
 export default function Home() {
   return (
     <main className="mx-auto max-w-xl py-20">
-      <Form />
+      <FormExample />
     </main>
   );
 }

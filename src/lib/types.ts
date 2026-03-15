@@ -1,3 +1,5 @@
+/// <reference types="@types/react" />
+
 export interface FieldState<T> {
   /** The current value of the field. */
   value: T;
@@ -16,6 +18,7 @@ export interface FieldState<T> {
 export interface FieldRenderProps<T> extends FieldState<T> {
   handleChange: (value: T) => void;
   handleBlur: () => void;
+  ref: (el: HTMLElement | null) => void;
 }
 
 export interface FieldProps<T> {
@@ -34,3 +37,24 @@ export interface FieldProps<T> {
 export type SyncValidator<T> = (value: T) => React.ReactNode;
 export type AsyncValidator<T> = (value: T) => Promise<React.ReactNode>;
 export type Validator<T> = SyncValidator<T> | AsyncValidator<T>;
+
+export interface FormContextValue {
+  registerField: (
+    id: string,
+    state: FieldState<unknown>,
+    ref: HTMLElement | null,
+    validate: () => Promise<boolean>,
+    commitPendingValidation: () => Promise<void>,
+  ) => void;
+  unregisterField: (id: string) => void;
+}
+
+export type FieldMap = Map<
+  string,
+  {
+    state: FieldState<unknown>;
+    ref: HTMLElement | null;
+    validate: () => Promise<boolean>;
+    commitPendingValidation: () => Promise<void>;
+  }
+>;
