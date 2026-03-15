@@ -13,6 +13,8 @@ export function Field<T>(props: FieldProps<T>) {
     validateOnChangeAsync,
     validateOnBlur,
     validateOnBlurAsync,
+    validateOnSubmit,
+    validateOnSubmitAsync,
     debounceMs = 500,
     validateOnTouch = false,
   } = props;
@@ -39,6 +41,8 @@ export function Field<T>(props: FieldProps<T>) {
         validateOnChangeAsync,
         validateOnBlur,
         validateOnBlurAsync,
+        validateOnSubmit,
+        validateOnSubmitAsync,
       );
       return pendingValidationRef.current.isValid;
     }

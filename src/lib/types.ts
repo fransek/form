@@ -30,6 +30,8 @@ export interface FieldProps<T> {
   validateOnChangeAsync?: AsyncValidator<T>;
   validateOnBlur?: SyncValidator<T>;
   validateOnBlurAsync?: AsyncValidator<T>;
+  validateOnSubmit?: SyncValidator<T>;
+  validateOnSubmitAsync?: AsyncValidator<T>;
   validateOnTouch?: boolean;
   debounceMs?: number;
 }

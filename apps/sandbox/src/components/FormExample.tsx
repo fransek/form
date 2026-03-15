@@ -1,323 +1,296 @@
 "use client";
 
+import { cn } from "@/lib/utils";
 import {
-  FavoriteFruitOption,
-  GenderOption,
-  HobbyOption,
-  favoriteFruitOptions,
-  genderOptions,
-  hobbyOptions,
-} from "@/lib/options";
-import { Field, Form, createFieldState, validateIfDirty } from "@fransek/form";
+  validateAssignee,
+  validateDueDate,
+  validatePriority,
+  validateStartDate,
+  validateSummary,
+  validateSummaryAsync,
+  validateType,
+} from "@/lib/validation";
+import { createFieldState, Field, FieldState, Form } from "@fransek/form";
+import {
+  Checkbox,
+  CheckboxGroup,
+  DatePicker,
+  Dialog,
+  DialogClose,
+  DialogTitle,
+  Radio,
+  RadioGroup,
+} from "@fransek/ui";
 import { Button } from "@fransek/ui/button";
-import { Checkbox } from "@fransek/ui/checkbox";
-import { CheckboxGroup } from "@fransek/ui/checkbox-group";
 import { Input } from "@fransek/ui/input";
-import { Radio } from "@fransek/ui/radio";
-import { RadioGroup } from "@fransek/ui/radio-group";
 import { Select } from "@fransek/ui/select";
-import { Trash } from "lucide-react";
-import { useRef, useState } from "react";
-import {
-  validateEmail,
-  validateFavoriteColor,
-  validateFavoriteFruit,
-  validateGender,
-  validateHobbies,
-  validatePassword,
-  validateRepeatPassword,
-  validateTermsAccepted,
-  validateUsername,
-  validateUsernameAsync,
-} from "../lib/validation";
+import { Textarea } from "@fransek/ui/textarea";
+import { useState } from "react";
+import { Subtasks } from "./Subtasks";
+
+export const priorities = [
+  { value: "low", label: "Low", className: "bg-success-foreground" },
+  { value: "medium", label: "Medium", className: "bg-warning-foreground" },
+  { value: "high", label: "High", className: "bg-error-foreground" },
+] as const;
+
+export const initialFormData = {
+  summary: createFieldState(""),
+  description: createFieldState(""),
+  type: createFieldState<string | null>(null),
+  priority: createFieldState<string | null>(null),
+  startDate: createFieldState(""),
+  dueDate: createFieldState(""),
+  assignees: createFieldState<string[]>([]),
+  subtasks: [] as FieldState<string>[],
+  createAnother: createFieldState(false),
+};
 
 export function FormExample() {
-  const favoriteColorId = useRef(0);
-  const [form, setForm] = useState({
-    email: createFieldState(""),
-    username: createFieldState(""),
-    gender: createFieldState<GenderOption | "">(""),
-    hobbies: createFieldState<HobbyOption[]>([]),
-    favoriteFruit: createFieldState<FavoriteFruitOption>(null),
-    favoriteColors: [{ id: 0, state: createFieldState("") }],
-    password: createFieldState(""),
-    repeatPassword: createFieldState(""),
-    termsAccepted: createFieldState(false),
-  });
-
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState(initialFormData);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   return (
     <Form
-      className="flex flex-col gap-4"
+      className="mx-2 flex flex-col gap-4 rounded-lg border p-6"
       onSubmit={async (e, validate) => {
         e.preventDefault();
         setIsSubmitting(true);
         const isValid = await validate();
         if (isValid) {
-          alert("Form submitted successfully!");
+          setDialogOpen(true);
         }
         setIsSubmitting(false);
       }}
+      onReset={() => setFormData(initialFormData)}
     >
+      <h1 className="heading-2">New Task</h1>
+
       <Field
-        state={form.email}
-        onChange={(email) => setForm((prev) => ({ ...prev, email }))}
-        validateOnChange={validateEmail}
+        state={formData.summary}
+        onChange={(summary) => setFormData((prev) => ({ ...prev, summary }))}
+        validateOnChange={validateSummary}
+        validateOnChangeAsync={validateSummaryAsync}
       >
         {(props) => (
           <Input
-            label="Email"
-            placeholder="you@example.com"
+            label="Summary"
             errorMessage={props.errorMessage}
+            onValueChange={props.handleChange}
             onBlur={props.handleBlur}
-            onChange={(e) => props.handleChange(e.target.value)}
-            isValidating={props.isValidating}
             value={props.value}
             ref={props.ref}
-            autoComplete="new-password" // Prevents Chrome autofill
+            isValidating={props.isValidating}
           />
         )}
       </Field>
+
       <Field
-        state={form.username}
-        onChange={(name) => setForm((prev) => ({ ...prev, username: name }))}
-        validateOnChange={validateUsername}
-        validateOnChangeAsync={validateUsernameAsync}
-        validateOnTouch
+        state={formData.description}
+        onChange={(description) =>
+          setFormData((prev) => ({ ...prev, description }))
+        }
       >
         {(props) => (
-          <Input
-            label="Username"
+          <Textarea
+            label="Description"
+            rows={4}
             errorMessage={props.errorMessage}
+            onValueChange={props.handleChange}
             onBlur={props.handleBlur}
-            onChange={(e) => props.handleChange(e.target.value)}
-            isValidating={props.isValidating}
             value={props.value}
             ref={props.ref}
-            isValidatingMessage="Checking availability..."
-            autoComplete="new-password" // Prevents Chrome autofill
+            isValidating={props.isValidating}
           />
         )}
       </Field>
+
       <Field
-        state={form.gender}
-        onChange={(gender) => setForm((prev) => ({ ...prev, gender }))}
-        validateOnChange={validateGender}
+        state={formData.type}
+        onChange={(type) => setFormData((prev) => ({ ...prev, type }))}
+        validateOnChange={validateType}
       >
         {(props) => (
           <RadioGroup
-            label="Gender"
+            label="Type"
             errorMessage={props.errorMessage}
+            onValueChange={props.handleChange}
+            onBlur={props.handleBlur}
             value={props.value}
             ref={props.ref}
-            onValueChange={props.handleChange}
+            isValidating={props.isValidating}
           >
-            {genderOptions.map((option) => (
-              <Radio
-                key={option.value}
-                label={option.label}
-                value={option.value}
-                onBlur={props.handleBlur}
-              />
-            ))}
+            <Radio value="bug" label="Bug" />
+            <Radio value="feature" label="Feature" />
+            <Radio value="improvement" label="Improvement" />
           </RadioGroup>
         )}
       </Field>
+
       <Field
-        state={form.hobbies}
-        onChange={(hobbies) => setForm((prev) => ({ ...prev, hobbies }))}
-        validateOnChange={validateHobbies}
-      >
-        {(props) => (
-          <CheckboxGroup
-            label="Hobbies"
-            description="Please select 1-2 hobbies"
-            errorMessage={props.errorMessage}
-            value={props.value}
-            ref={props.ref}
-            onValueChange={(value) =>
-              props.handleChange(value as HobbyOption[])
-            }
-          >
-            {hobbyOptions.map((option) => (
-              <Checkbox
-                key={option.value}
-                name="hobbies"
-                label={option.label}
-                value={option.value}
-                onBlur={props.handleBlur}
-              />
-            ))}
-          </CheckboxGroup>
-        )}
-      </Field>
-      {form.favoriteColors.map((color, index) => (
-        <Field
-          key={color.id}
-          state={color.state}
-          onChange={(newColor) =>
-            setForm((prev) => ({
-              ...prev,
-              favoriteColors: prev.favoriteColors.map((c, i) =>
-                i === index ? { ...c, state: newColor } : c,
-              ),
-            }))
-          }
-          validateOnChange={validateFavoriteColor}
-        >
-          {(props) => (
-            <Input
-              label={
-                "Favorite Color" +
-                (form.favoriteColors.length > 1 ? ` ${index + 1}` : "")
-              }
-              errorMessage={props.errorMessage}
-              onBlur={props.handleBlur}
-              onChange={(e) => props.handleChange(e.target.value)}
-              isValidating={props.isValidating}
-              value={props.value}
-              ref={props.ref}
-              autoComplete="new-password" // Prevents Chrome autofill
-              rightAdornment={
-                form.favoriteColors.length > 1 ? (
-                  <Button
-                    size="sm"
-                    type="button"
-                    variant="ghost"
-                    onClick={() => {
-                      setForm((prev) => ({
-                        ...prev,
-                        favoriteColors: prev.favoriteColors.filter(
-                          (_, i) => i !== index,
-                        ),
-                      }));
-                    }}
-                  >
-                    <Trash className="size-4" />
-                    Remove
-                  </Button>
-                ) : undefined
-              }
-            />
-          )}
-        </Field>
-      ))}
-      {form.favoriteColors.every((color) => color.state.value) &&
-        form.favoriteColors.length < 5 && (
-          <Button
-            size="sm"
-            variant="outline"
-            type="button"
-            onClick={() => {
-              const id = ++favoriteColorId.current;
-              setForm((prev) => ({
-                ...prev,
-                favoriteColors: [
-                  ...prev.favoriteColors,
-                  {
-                    id,
-                    state: createFieldState(""),
-                  },
-                ],
-              }));
-            }}
-          >
-            Add Another Color
-          </Button>
-        )}
-      <Field
-        state={form.favoriteFruit}
-        onChange={(favoriteFruit) =>
-          setForm((prev) => ({ ...prev, favoriteFruit }))
-        }
-        validateOnChange={validateFavoriteFruit}
+        state={formData.priority}
+        onChange={(priority) => setFormData((prev) => ({ ...prev, priority }))}
+        validateOnChange={validatePriority}
       >
         {(props) => (
           <Select
-            label="Favorite Fruit"
+            label="Priority"
+            placeholder="Select priority"
+            items={priorities.map(({ value, label, className }) => ({
+              value,
+              label: (
+                <span className={cn("flex items-center gap-2")}>
+                  <span
+                    className={cn("ml-1 size-1.5 rounded-full", className)}
+                  />
+                  {label}
+                </span>
+              ),
+            }))}
             errorMessage={props.errorMessage}
-            items={favoriteFruitOptions}
-            onBlur={props.handleBlur}
             onValueChange={props.handleChange}
-            isValidating={props.isValidating}
+            onBlur={props.handleBlur}
             value={props.value}
             ref={props.ref}
-            placeholder="Select a fruit"
+            isValidating={props.isValidating}
           />
         )}
       </Field>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Field
+          state={formData.startDate}
+          onChange={(startDate) =>
+            setFormData((prev) => ({
+              ...prev,
+              startDate,
+              dueDate: {
+                ...prev.dueDate,
+                isValid: true,
+                errorMessage: undefined,
+              },
+            }))
+          }
+          validateOnChange={(value) =>
+            validateStartDate(value, formData.dueDate.value)
+          }
+          validateOnTouch
+        >
+          {(props) => (
+            <DatePicker
+              label="Start Date"
+              errorMessage={props.errorMessage}
+              onValueChange={props.handleChange}
+              onBlur={props.handleBlur}
+              value={props.value}
+              ref={props.ref}
+              isValidating={props.isValidating}
+              calendarProps={{
+                autoFocus: false,
+              }}
+            />
+          )}
+        </Field>
+
+        <Field
+          state={formData.dueDate}
+          onChange={(dueDate) =>
+            setFormData((prev) => ({
+              ...prev,
+              dueDate,
+              startDate: {
+                ...prev.startDate,
+                isValid: true,
+                errorMessage: undefined,
+              },
+            }))
+          }
+          validateOnChange={(value) =>
+            validateDueDate(value, formData.startDate.value)
+          }
+          validateOnTouch
+        >
+          {(props) => (
+            <DatePicker
+              label="Due Date"
+              errorMessage={props.errorMessage}
+              onValueChange={props.handleChange}
+              onBlur={props.handleBlur}
+              value={props.value}
+              ref={props.ref}
+              isValidating={props.isValidating}
+              calendarProps={{
+                autoFocus: false,
+              }}
+            />
+          )}
+        </Field>
+      </div>
+
       <Field
-        state={form.password}
-        onChange={(password) => {
-          setForm((prev) => ({
-            ...prev,
-            password,
-            repeatPassword: validateIfDirty(
-              prev.repeatPassword,
-              validateRepeatPassword(password.value),
-            ),
-          }));
-        }}
-        validateOnChange={validatePassword}
+        state={formData.assignees}
+        onChange={(assignees) =>
+          setFormData((prev) => ({ ...prev, assignees }))
+        }
+        validateOnChange={validateAssignee}
+        validateOnTouch
       >
         {(props) => (
-          <Input
-            label="Password"
+          <CheckboxGroup
+            label="Assignees"
             errorMessage={props.errorMessage}
+            onValueChange={props.handleChange}
             onBlur={props.handleBlur}
-            onChange={(e) => props.handleChange(e.target.value)}
-            isValidating={props.isValidating}
             value={props.value}
             ref={props.ref}
-            type="password"
-            autoComplete="new-password" // Prevents Chrome autofill
-          />
-        )}
-      </Field>
-      <Field
-        state={form.repeatPassword}
-        onChange={(repeatPassword) =>
-          setForm((prev) => ({ ...prev, repeatPassword }))
-        }
-        validateOnChange={validateRepeatPassword(form.password.value)}
-      >
-        {(props) => (
-          <Input
-            label="Repeat Password"
-            errorMessage={props.errorMessage}
-            onBlur={props.handleBlur}
-            onChange={(e) => props.handleChange(e.target.value)}
             isValidating={props.isValidating}
-            value={props.value}
-            ref={props.ref}
-            type="password"
-            autoComplete="new-password" // Prevents Chrome autofill
-          />
+          >
+            <Checkbox value="alice" label="Alice" />
+            <Checkbox value="bob" label="Bob" />
+            <Checkbox value="charlie" label="Charlie" />
+          </CheckboxGroup>
         )}
       </Field>
+
+      <Subtasks formData={formData} setFormData={setFormData} />
+
       <Field
-        state={form.termsAccepted}
-        onChange={(termsAccepted) =>
-          setForm((prev) => ({ ...prev, termsAccepted }))
+        state={formData.createAnother}
+        onChange={(createAnother) =>
+          setFormData((prev) => ({ ...prev, createAnother }))
         }
-        validateOnChange={validateTermsAccepted}
       >
         {(props) => (
           <Checkbox
-            label="I accept the terms and conditions"
+            label="Create another task"
             errorMessage={props.errorMessage}
-            onBlur={props.handleBlur}
             onCheckedChange={props.handleChange}
-            isValidating={props.isValidating}
+            onBlur={props.handleBlur}
             checked={props.value}
             ref={props.ref}
+            isValidating={props.isValidating}
           />
         )}
       </Field>
-      <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? "Submitting..." : "Submit"}
-      </Button>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Button variant="secondary" type="reset">
+          Reset
+        </Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? "Creating..." : "Create Task"}
+        </Button>
+      </div>
+
+      <Dialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        popupProps={{ className: "z-10" }}
+      >
+        <DialogTitle className="mb-4">Task created!</DialogTitle>
+        <DialogClose render={<Button />}>OK</DialogClose>
+      </Dialog>
     </Form>
   );
 }
