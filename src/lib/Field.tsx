@@ -1,27 +1,80 @@
-import { useEffect, useRef } from "react";
-import { FieldProps } from "./types";
+import { useEffect, useId, useRef } from "react";
+import { validateAsync } from "./fieldState";
+import { useFormContext } from "./Form";
+import { FieldProps, FieldState } from "./types";
 
-export function Field<T>({
-  children,
-  state,
-  onChange,
-  onBlur,
-  validateOnChange,
-  validateOnChangeAsync,
-  validateOnBlur,
-  validateOnBlurAsync,
-  debounceMs = 500,
-  validateOnTouch = false,
-}: FieldProps<T>) {
+export function Field<T>(props: FieldProps<T>) {
+  const {
+    children,
+    state,
+    onChange,
+    onBlur,
+    validateOnChange,
+    validateOnChangeAsync,
+    validateOnBlur,
+    validateOnBlurAsync,
+    validateOnSubmit,
+    validateOnSubmitAsync,
+    debounceMs = 500,
+    validateOnTouch = false,
+  } = props;
+
   const stateRef = useRef(state);
   const validationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
-  const validationId = useRef(0);
+  const validationIdRef = useRef(0);
   const isValidatingOnBlurRef = useRef(false);
   const isValidatingOnChangeRef = useRef(false);
+  const pendingValidationRef = useRef<FieldState<T> | null>(null);
+  const fieldRef = useRef<HTMLElement | null>(null);
+  const id = useId();
+  const { registerField, unregisterField } = useFormContext();
 
   stateRef.current = state;
+
+  useEffect(() => {
+    async function validate() {
+      pendingValidationRef.current = await validateAsync(
+        state,
+        validateOnChange,
+        validateOnChangeAsync,
+        validateOnBlur,
+        validateOnBlurAsync,
+        validateOnSubmit,
+        validateOnSubmitAsync,
+      );
+      return pendingValidationRef.current.isValid;
+    }
+
+    async function commitPendingValidation() {
+      if (pendingValidationRef.current) {
+        onChange(pendingValidationRef.current);
+        pendingValidationRef.current = null;
+      }
+    }
+
+    registerField(
+      id,
+      state,
+      fieldRef.current,
+      validate,
+      commitPendingValidation,
+    );
+
+    return () => {
+      unregisterField(id);
+    };
+  }, [
+    id,
+    state,
+    registerField,
+    validateOnChange,
+    validateOnChangeAsync,
+    validateOnBlur,
+    validateOnBlurAsync,
+    onChange,
+  ]);
 
   useEffect(() => {
     return () => {
@@ -29,14 +82,14 @@ export function Field<T>({
         clearTimeout(validationTimeoutRef.current);
       }
     };
-  }, []);
+  }, [id, unregisterField]);
 
   function handleChange(value: T) {
     if (validationTimeoutRef.current) {
       clearTimeout(validationTimeoutRef.current);
     }
 
-    const currentValidation = ++validationId.current;
+    const currentValidation = ++validationIdRef.current;
 
     if (
       (stateRef.current.isDirty || validateOnTouch) &&
@@ -60,7 +113,7 @@ export function Field<T>({
           const asyncErrorMessage = await validateOnChangeAsync?.(value);
 
           isValidatingOnChangeRef.current = false;
-          if (currentValidation === validationId.current) {
+          if (currentValidation === validationIdRef.current) {
             onChange({
               ...stateRef.current,
               errorMessage: asyncErrorMessage,
@@ -83,7 +136,7 @@ export function Field<T>({
   async function handleBlur() {
     onBlur?.();
 
-    const currentValidation = validationId.current;
+    const currentValidation = validationIdRef.current;
 
     if (!stateRef.current.isTouched) {
       return;
@@ -115,7 +168,7 @@ export function Field<T>({
     }
 
     isValidatingOnBlurRef.current = false;
-    if (currentValidation !== validationId.current) {
+    if (currentValidation !== validationIdRef.current) {
       return;
     }
 
@@ -128,9 +181,14 @@ export function Field<T>({
     });
   }
 
+  const ref = (el: HTMLElement | null) => {
+    fieldRef.current = el;
+  };
+
   return children({
     ...stateRef.current,
     handleChange,
     handleBlur,
+    ref,
   });
 }
