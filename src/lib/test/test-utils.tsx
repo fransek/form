@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import React, { useState } from "react";
 import { Field } from "../Field";
 import { createFieldState } from "../fieldState";
+import { ValidationMode } from "../types";
 
 interface FormState {
   field: ReturnType<typeof createFieldState<string>>;
@@ -14,7 +15,7 @@ interface InputProps {
   validateOnBlur?: (value: string) => React.ReactNode;
   validateOnBlurAsync?: (value: string) => Promise<React.ReactNode>;
   debounceMs?: number;
-  validateOnTouch?: boolean;
+  validationMode?: ValidationMode;
 }
 
 const Input = ({
@@ -23,7 +24,7 @@ const Input = ({
   validateOnBlur,
   validateOnBlurAsync,
   debounceMs,
-  validateOnTouch,
+  validationMode,
 }: InputProps = {}) => {
   const [form, setForm] = useState<FormState>({
     field: createFieldState(""),
@@ -33,11 +34,13 @@ const Input = ({
     <Field<string>
       state={form.field}
       onChange={(field) => setForm({ field })}
-      validateOnChange={validateOnChange}
-      validateOnChangeAsync={validateOnChangeAsync}
-      validateOnBlur={validateOnBlur}
-      validateOnBlurAsync={validateOnBlurAsync}
-      validateOnTouch={validateOnTouch}
+      validation={{
+        onChange: validateOnChange,
+        onChangeAsync: validateOnChangeAsync,
+        onBlur: validateOnBlur,
+        onBlurAsync: validateOnBlurAsync,
+      }}
+      validationMode={validationMode}
       debounceMs={debounceMs}
     >
       {({
