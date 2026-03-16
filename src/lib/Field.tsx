@@ -37,9 +37,15 @@ export function Field<T>(props: FieldProps<T>) {
 
   useEffect(() => {
     async function performValidation() {
-      if (!stateRef.current.isValid) {
+      if (
+        !stateRef.current.isValid &&
+        !stateRef.current.isValidating &&
+        stateRef.current.isDirty &&
+        stateRef.current.isTouched
+      ) {
         return false;
       }
+      validationIdRef.current++;
       pendingValidationRef.current = validate(
         state,
         validation?.onChange,
@@ -74,18 +80,7 @@ export function Field<T>(props: FieldProps<T>) {
     return () => {
       unregisterField(id);
     };
-  }, [
-    id,
-    state,
-    registerField,
-    validation?.onChange,
-    validation?.onChangeAsync,
-    validation?.onBlur,
-    validation?.onBlurAsync,
-    validation?.onSubmit,
-    validation?.onSubmitAsync,
-    onChange,
-  ]);
+  }, [id, state, registerField, validation, onChange, unregisterField]);
 
   useEffect(() => {
     return () => {
@@ -191,12 +186,17 @@ export function Field<T>(props: FieldProps<T>) {
     }
 
     isValidatingOnBlurRef.current = false;
-    if (currentValidation !== validationIdRef.current) {
-      return;
-    }
 
     if (errorMessage && validationTimeoutRef.current) {
       clearTimeout(validationTimeoutRef.current);
+    }
+
+    if (currentValidation !== validationIdRef.current) {
+      onChange({
+        ...stateRef.current,
+        isTouched: true,
+      });
+      return;
     }
 
     onChange({
