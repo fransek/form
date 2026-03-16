@@ -12,7 +12,7 @@ import {
   specificValueValidator,
 } from "./test/test-utils";
 
-describe.skip("Field", () => {
+describe("Field", () => {
   afterEach(() => {
     cleanup();
   });
@@ -49,16 +49,16 @@ describe.skip("Field", () => {
       expect((input as HTMLInputElement).value).toBe("test");
     });
 
-    it("should set isTouched to true when value changes", async () => {
+    it("should keep isTouched false when value changes", async () => {
       const { user, input } = setupTest();
       await user.type(input, "a");
-      expectAttribute(input, "data-istouched", "true");
+      expectAttribute(input, "data-istouched", "false");
     });
 
-    it("should not set isDirty to true on first change", async () => {
+    it("should set isDirty to true on first change", async () => {
       const { user, input } = setupTest();
       await user.type(input, "a");
-      expectAttribute(input, "data-isdirty", "false");
+      expectAttribute(input, "data-isdirty", "true");
     });
 
     it("should set isDirty to true on subsequent changes after blur", async () => {
@@ -72,7 +72,7 @@ describe.skip("Field", () => {
       expectAttribute(input, "data-isdirty", "true");
     });
 
-    it("should validate immediately if validateOnTouch is true", async () => {
+    it("should not validate before blur when validationMode is touched", async () => {
       const validator = vi.fn(minLengthValidator(3));
       const { user, input } = setupTest({
         validationMode: "touched",
@@ -81,12 +81,10 @@ describe.skip("Field", () => {
 
       await user.type(input, "a");
 
-      await waitFor(() => {
-        expect(validator).toHaveBeenCalledWith("a");
-        expectAttribute(input, "data-istouched", "true");
-        expectAttribute(input, "data-isvalid", "false");
-        expectErrorMessage(input, "Minimum 3 characters");
-      });
+      expect(validator).not.toHaveBeenCalled();
+      expectAttribute(input, "data-istouched", "false");
+      expectAttribute(input, "data-isvalid", "true");
+      expectErrorMessage(input, null);
     });
   });
 
@@ -134,12 +132,12 @@ describe.skip("Field", () => {
       expectErrorMessage(input, null);
     });
 
-    it("should mark isTouched as true when validation fails", async () => {
+    it("should keep isTouched false when validation fails on change", async () => {
       const validator = vi.fn(minLengthValidator(3));
       const { user, input } = setupTest({ validateOnChange: validator });
 
       await user.type(input, "ab");
-      expectAttribute(input, "data-istouched", "true");
+      expectAttribute(input, "data-istouched", "false");
     });
   });
 
@@ -357,7 +355,10 @@ describe.skip("Field", () => {
       expectAttribute(input, "data-istouched", "false");
 
       await user.type(input, "a");
-      expectAttribute(input, "data-istouched", "true");
+      expectAttribute(input, "data-istouched", "false");
+
+      await blurInput(input);
+      await waitFor(() => expectAttribute(input, "data-istouched", "true"));
     });
 
     it("should track isDirty correctly", async () => {
@@ -366,11 +367,7 @@ describe.skip("Field", () => {
       expectAttribute(input, "data-isdirty", "false");
 
       await user.type(input, "a");
-      expectAttribute(input, "data-isdirty", "false");
-
-      await blurInput(input);
-
-      await waitFor(() => expectAttribute(input, "data-isdirty", "true"));
+      expectAttribute(input, "data-isdirty", "true");
     });
 
     it("should track isValidating during async validation", async () => {
