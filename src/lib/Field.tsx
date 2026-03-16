@@ -99,7 +99,9 @@ export function Field<T>(props: FieldProps<T>) {
     const currentValidation = ++validationIdRef.current;
 
     const shouldValidate =
-      validationMode === "dirty" || stateRef.current.isTouched;
+      validationMode === "dirty" ||
+      validationMode === "touchedOrDirty" ||
+      stateRef.current.isTouched;
 
     if (shouldValidate && (validation?.onChange || validation?.onChangeAsync)) {
       const errorMessage = validation?.onChange?.(value);
@@ -153,6 +155,7 @@ export function Field<T>(props: FieldProps<T>) {
 
     const shouldValidateOnChange =
       validationMode === "touched" ||
+      validationMode === "touchedOrDirty" ||
       (validationMode === "touchedAndDirty" && stateRef.current.isDirty);
 
     if (!errorMessage && shouldValidateOnChange && validation?.onChange) {
