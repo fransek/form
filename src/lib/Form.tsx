@@ -6,9 +6,27 @@ interface FormProps extends Omit<React.ComponentProps<"form">, "onSubmit"> {
   debounceMs?: number;
   onSubmit?: (
     e: React.SubmitEvent<HTMLFormElement>,
-    validateAllFields: () => Promise<boolean>,
+    validateAllFields: (options?: FocusFirstErrorOptions) => Promise<boolean>,
   ) => void;
 }
+
+export interface FocusFirstErrorOptions {
+  getFocusElement?: (field: HTMLElement) => HTMLElement | null;
+  scrollToElement?: ((element: HTMLElement) => void) | false;
+}
+
+const focusableSelector = [
+  "input:not([disabled]):not([tabindex='-1'])",
+  "select:not([disabled]):not([tabindex='-1'])",
+  "textarea:not([disabled]):not([tabindex='-1'])",
+  "button:not([disabled]):not([tabindex='-1'])",
+  "a[href]:not([tabindex='-1'])",
+  "[role='radio']:not([aria-disabled='true'])",
+  "[role='checkbox']:not([aria-disabled='true'])",
+  "[role='switch']:not([aria-disabled='true'])",
+  "[tabindex]:not([tabindex='-1'])",
+  "[contenteditable='true']",
+].join(",");
 
 export function Form({
   onSubmit,
@@ -38,20 +56,23 @@ export function Form({
     fieldsRef.current.delete(id);
   }, []);
 
-  const validateAllFields = useCallback(async () => {
-    const fields = Array.from(fieldsRef.current.values());
-    const validationPromises = fields.map(async (field) => ({
-      isValid: await field.validate(),
-      ref: field.ref,
-    }));
-    const results = await Promise.all(validationPromises);
-    fields.forEach((field) => field.commitPendingValidation());
-    const hasErrors = results.some((result) => !result.isValid);
-    if (hasErrors) {
-      focusFirstError(results);
-    }
-    return !hasErrors;
-  }, []);
+  const validateAllFields = useCallback(
+    async (options?: FocusFirstErrorOptions) => {
+      const fields = Array.from(fieldsRef.current.values());
+      const validationPromises = fields.map(async (field) => ({
+        isValid: await field.validate(),
+        ref: field.ref,
+      }));
+      const results = await Promise.all(validationPromises);
+      fields.forEach((field) => field.commitPendingValidation());
+      const hasErrors = results.some((result) => !result.isValid);
+      if (hasErrors) {
+        focusFirstError(results, options);
+      }
+      return !hasErrors;
+    },
+    [],
+  );
 
   return (
     <FormContext.Provider
@@ -76,11 +97,43 @@ export function useFormContext() {
   return React.useContext(FormContext);
 }
 
+function defaultGetFocusElement(element: HTMLElement) {
+  if (element.role === "radiogroup") {
+    const radio = element.querySelector<HTMLElement>('[role="radio"]');
+    if (radio) {
+      return radio;
+    }
+  }
+
+  if (element.role === "group") {
+    const checkbox = element.querySelector<HTMLElement>('[role="checkbox"]');
+    if (checkbox) {
+      return checkbox;
+    }
+  }
+
+  if (element.matches(focusableSelector)) {
+    return element;
+  }
+
+  return element.querySelector<HTMLElement>(focusableSelector) ?? element;
+}
+
+function defaultScrollToElement(element: HTMLElement) {
+  const rect = element.getBoundingClientRect();
+  if (rect) {
+    window.scrollTo({
+      top: rect.top + window.scrollY - 100,
+    });
+  }
+}
+
 export function focusFirstError(
   results: {
     isValid: boolean;
     ref: HTMLElement | null;
   }[],
+  options?: FocusFirstErrorOptions,
 ) {
   const firstInvalidField = results
     .filter((field) => !field.isValid && field.ref)
@@ -94,28 +147,23 @@ export function focusFirstError(
     return;
   }
 
-  let firstInvalid = firstInvalidField;
+  const getFocusElement = options?.getFocusElement ?? defaultGetFocusElement;
+  const scrollToElement =
+    options?.scrollToElement === false
+      ? null
+      : (options?.scrollToElement ?? defaultScrollToElement);
 
-  if (firstInvalid.role === "radiogroup") {
-    const radio = firstInvalid.querySelector<HTMLElement>('[role="radio"]');
-    if (radio) {
-      firstInvalid = radio;
-    }
-  }
+  const firstInvalid =
+    getFocusElement(firstInvalidField) ??
+    defaultGetFocusElement(firstInvalidField);
 
-  if (firstInvalid.role === "group") {
-    const checkbox =
-      firstInvalid.querySelector<HTMLElement>('[role="checkbox"]');
-    if (checkbox) {
-      firstInvalid = checkbox;
-    }
+  if (!firstInvalid) {
+    return;
   }
 
   firstInvalid.focus();
-  const rect = firstInvalid.getBoundingClientRect();
-  if (rect) {
-    window.scrollTo({
-      top: rect.top + window.scrollY - 100,
-    });
+
+  if (scrollToElement) {
+    scrollToElement(firstInvalid);
   }
 }

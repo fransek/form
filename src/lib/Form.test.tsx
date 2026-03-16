@@ -2,7 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React, { useEffect, useRef } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Form, useFormContext } from "./Form";
+import { focusFirstError, Form, useFormContext } from "./Form";
 
 interface RegisteredFieldProps {
   id: string;
@@ -106,5 +106,36 @@ describe("Form", () => {
       expect(screen.getByTestId("first-field")).toHaveFocus();
       expect(window.scrollTo).toHaveBeenCalled();
     });
+  });
+
+  it("should focus the first focusable descendant when field ref is not focusable", () => {
+    const container = document.createElement("div");
+    const input = document.createElement("input");
+    container.appendChild(input);
+    document.body.appendChild(container);
+
+    focusFirstError([
+      { isValid: false, ref: container },
+      { isValid: false, ref: null },
+    ]);
+
+    expect(input).toHaveFocus();
+  });
+
+  it("should allow customizing focus target and scroll behavior", () => {
+    const container = document.createElement("div");
+    const fallback = document.createElement("button");
+    container.appendChild(fallback);
+    document.body.appendChild(container);
+    const customFocusEl = document.createElement("textarea");
+    vi.spyOn(customFocusEl, "focus");
+
+    focusFirstError([{ isValid: false, ref: container }], {
+      getFocusElement: () => customFocusEl,
+      scrollToElement: false,
+    });
+
+    expect(customFocusEl.focus).toHaveBeenCalled();
+    expect(window.scrollTo).not.toHaveBeenCalled();
   });
 });
