@@ -23,7 +23,7 @@ export function Form({
       id: string,
       ref: HTMLElement | null,
       validate: () => Promise<boolean>,
-      commitPendingValidation: () => Promise<void>,
+      commitPendingValidation: () => void,
     ) => {
       fieldsRef.current.set(id, {
         ref,

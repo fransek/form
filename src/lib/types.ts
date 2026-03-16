@@ -52,7 +52,7 @@ export interface FormContextValue {
     id: string,
     ref: HTMLElement | null,
     validate: () => Promise<boolean>,
-    commitPendingValidation: () => Promise<void>,
+    commitPendingValidation: () => void,
   ) => void;
   unregisterField: (id: string) => void;
 }
@@ -62,6 +62,6 @@ export type FieldMap = Map<
   {
     ref: HTMLElement | null;
     validate: () => Promise<boolean>;
-    commitPendingValidation: () => Promise<void>;
+    commitPendingValidation: () => void;
   }
 >;

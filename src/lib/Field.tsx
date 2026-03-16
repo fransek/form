@@ -63,7 +63,7 @@ export function Field<T>(props: FieldProps<T>) {
       return pendingValidationRef.current.isValid;
     }
 
-    async function commitPendingValidation() {
+    function commitPendingValidation() {
       if (pendingValidationRef.current) {
         onChange(pendingValidationRef.current);
         pendingValidationRef.current = null;
