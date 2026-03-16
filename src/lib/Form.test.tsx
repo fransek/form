@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React, { useEffect, useRef } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Form, useFormContext } from "./Form";
 
 interface RegisteredFieldProps {
@@ -29,6 +29,10 @@ function RegisteredField({
 describe("Form", () => {
   beforeEach(() => {
     vi.spyOn(window, "scrollTo").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it("should validate and commit all registered fields on submit", async () => {
