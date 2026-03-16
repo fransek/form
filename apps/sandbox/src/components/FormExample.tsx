@@ -42,7 +42,7 @@ export const initialFormData = {
   startDate: createFieldState(""),
   dueDate: createFieldState(""),
   assignees: createFieldState<string[]>([]),
-  subtasks: [] as FieldState<string>[],
+  subtasks: [] as { state: FieldState<string>; id: number }[],
   createAnother: createFieldState(false),
 };
 
