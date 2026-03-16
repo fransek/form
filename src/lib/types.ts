@@ -1,5 +1,3 @@
-/// <reference types="@types/react" />
-
 export interface FieldState<T> {
   /** The current value of the field. */
   value: T;
@@ -21,17 +19,22 @@ export interface FieldRenderProps<T> extends FieldState<T> {
   ref: (el: HTMLElement | null) => void;
 }
 
+export interface Validation<T> {
+  onChange?: SyncValidator<T>;
+  onChangeAsync?: AsyncValidator<T>;
+  onBlur?: SyncValidator<T>;
+  onBlurAsync?: AsyncValidator<T>;
+  onSubmit?: SyncValidator<T>;
+  onSubmitAsync?: AsyncValidator<T>;
+}
+
 export interface FieldProps<T> {
   state: FieldState<T>;
   children: (props: FieldRenderProps<T>) => React.ReactNode;
   onChange: (newState: FieldState<T>) => void;
+  onInput?: (value: T) => void;
   onBlur?: () => void;
-  validateOnChange?: SyncValidator<T>;
-  validateOnChangeAsync?: AsyncValidator<T>;
-  validateOnBlur?: SyncValidator<T>;
-  validateOnBlurAsync?: AsyncValidator<T>;
-  validateOnSubmit?: SyncValidator<T>;
-  validateOnSubmitAsync?: AsyncValidator<T>;
+  validation?: Validation<T>;
   validateOnTouch?: boolean;
   debounceMs?: number;
 }
@@ -43,7 +46,6 @@ export type Validator<T> = SyncValidator<T> | AsyncValidator<T>;
 export interface FormContextValue {
   registerField: (
     id: string,
-    state: FieldState<unknown>,
     ref: HTMLElement | null,
     validate: () => Promise<boolean>,
     commitPendingValidation: () => Promise<void>,
@@ -54,7 +56,6 @@ export interface FormContextValue {
 export type FieldMap = Map<
   string,
   {
-    state: FieldState<unknown>;
     ref: HTMLElement | null;
     validate: () => Promise<boolean>;
     commitPendingValidation: () => Promise<void>;

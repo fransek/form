@@ -1,5 +1,5 @@
 import React, { useCallback, useRef } from "react";
-import { FieldMap, FieldState, FormContextValue } from "./types";
+import { FieldMap, FormContextValue } from "./types";
 
 interface FormProps extends Omit<React.ComponentProps<"form">, "onSubmit"> {
   onSubmit?: (
@@ -14,13 +14,11 @@ export function Form({ onSubmit, ...props }: FormProps) {
   const registerField = useCallback(
     (
       id: string,
-      state: FieldState<unknown>,
       ref: HTMLElement | null,
       validate: () => Promise<boolean>,
       commitPendingValidation: () => Promise<void>,
     ) => {
       fieldsRef.current.set(id, {
-        state,
         ref,
         validate,
         commitPendingValidation,
@@ -83,16 +81,20 @@ export function focusFirstError(
     )
     .at(0);
 
-  let firstInvalid: HTMLElement | undefined = firstInvalidField;
+  if (!firstInvalidField) {
+    return;
+  }
 
-  if (firstInvalid?.role === "radiogroup") {
+  let firstInvalid = firstInvalidField;
+
+  if (firstInvalid.role === "radiogroup") {
     const radio = firstInvalid.querySelector<HTMLElement>('[role="radio"]');
     if (radio) {
       firstInvalid = radio;
     }
   }
 
-  if (firstInvalid?.role === "group") {
+  if (firstInvalid.role === "group") {
     const checkbox =
       firstInvalid.querySelector<HTMLElement>('[role="checkbox"]');
     if (checkbox) {
@@ -100,5 +102,11 @@ export function focusFirstError(
     }
   }
 
-  firstInvalid?.focus();
+  firstInvalid.focus();
+  const rect = firstInvalid.getBoundingClientRect();
+  if (rect) {
+    window.scrollTo({
+      top: rect.top + window.scrollY - 100,
+    });
+  }
 }

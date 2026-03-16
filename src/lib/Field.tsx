@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef } from "react";
-import { validateAsync } from "./fieldState";
+import { validate, validateAsync } from "./fieldState";
 import { useFormContext } from "./Form";
 import { FieldProps, FieldState } from "./types";
 
@@ -8,13 +8,9 @@ export function Field<T>(props: FieldProps<T>) {
     children,
     state,
     onChange,
+    onInput,
     onBlur,
-    validateOnChange,
-    validateOnChangeAsync,
-    validateOnBlur,
-    validateOnBlurAsync,
-    validateOnSubmit,
-    validateOnSubmitAsync,
+    validation,
     debounceMs = 500,
     validateOnTouch = false,
   } = props;
@@ -34,16 +30,24 @@ export function Field<T>(props: FieldProps<T>) {
   stateRef.current = state;
 
   useEffect(() => {
-    async function validate() {
-      pendingValidationRef.current = await validateAsync(
+    async function performValidation() {
+      if (!stateRef.current.isValid) {
+        return false;
+      }
+      pendingValidationRef.current = validate(
         state,
-        validateOnChange,
-        validateOnChangeAsync,
-        validateOnBlur,
-        validateOnBlurAsync,
-        validateOnSubmit,
-        validateOnSubmitAsync,
+        validation?.onChange,
+        validation?.onBlur,
+        validation?.onSubmit,
       );
+      if (pendingValidationRef.current.isValid) {
+        pendingValidationRef.current = await validateAsync(
+          state,
+          validation?.onChangeAsync,
+          validation?.onBlurAsync,
+          validation?.onSubmitAsync,
+        );
+      }
       return pendingValidationRef.current.isValid;
     }
 
@@ -56,9 +60,8 @@ export function Field<T>(props: FieldProps<T>) {
 
     registerField(
       id,
-      state,
       fieldRef.current,
-      validate,
+      performValidation,
       commitPendingValidation,
     );
 
@@ -69,10 +72,12 @@ export function Field<T>(props: FieldProps<T>) {
     id,
     state,
     registerField,
-    validateOnChange,
-    validateOnChangeAsync,
-    validateOnBlur,
-    validateOnBlurAsync,
+    validation?.onChange,
+    validation?.onChangeAsync,
+    validation?.onBlur,
+    validation?.onBlurAsync,
+    validation?.onSubmit,
+    validation?.onSubmitAsync,
     onChange,
   ]);
 
@@ -82,9 +87,11 @@ export function Field<T>(props: FieldProps<T>) {
         clearTimeout(validationTimeoutRef.current);
       }
     };
-  }, [id, unregisterField]);
+  }, []);
 
   function handleChange(value: T) {
+    onInput?.(value);
+
     if (validationTimeoutRef.current) {
       clearTimeout(validationTimeoutRef.current);
     }
@@ -93,10 +100,12 @@ export function Field<T>(props: FieldProps<T>) {
 
     if (
       (stateRef.current.isDirty || validateOnTouch) &&
-      (validateOnChange || validateOnChangeAsync)
+      (validation?.onChange || validation?.onChangeAsync)
     ) {
-      const errorMessage = validateOnChange?.(value);
-      const willValidateAsync = Boolean(validateOnChangeAsync && !errorMessage);
+      const errorMessage = validation?.onChange?.(value);
+      const willValidateAsync = Boolean(
+        validation?.onChangeAsync && !errorMessage,
+      );
 
       onChange({
         ...stateRef.current,
@@ -110,7 +119,7 @@ export function Field<T>(props: FieldProps<T>) {
       if (willValidateAsync) {
         isValidatingOnChangeRef.current = true;
         validationTimeoutRef.current = setTimeout(async () => {
-          const asyncErrorMessage = await validateOnChangeAsync?.(value);
+          const asyncErrorMessage = await validation?.onChangeAsync?.(value);
 
           isValidatingOnChangeRef.current = false;
           if (currentValidation === validationIdRef.current) {
@@ -143,13 +152,17 @@ export function Field<T>(props: FieldProps<T>) {
     }
 
     let errorMessage =
-      stateRef.current.errorMessage || validateOnBlur?.(stateRef.current.value);
+      stateRef.current.errorMessage ||
+      validation?.onBlur?.(stateRef.current.value);
 
-    if (!errorMessage && !stateRef.current.isDirty && validateOnChange) {
-      errorMessage = validateOnChange(stateRef.current.value);
+    if (!errorMessage && !stateRef.current.isDirty && validation?.onChange) {
+      errorMessage = validation?.onChange(stateRef.current.value);
     }
 
-    if (!errorMessage && (validateOnBlurAsync || validateOnChangeAsync)) {
+    if (
+      !errorMessage &&
+      (validation?.onBlurAsync || validation?.onChangeAsync)
+    ) {
       isValidatingOnBlurRef.current = true;
       onChange({
         ...stateRef.current,
@@ -157,10 +170,14 @@ export function Field<T>(props: FieldProps<T>) {
         isDirty: true,
       });
 
-      const asyncValidations = [validateOnBlurAsync?.(stateRef.current.value)];
+      const asyncValidations = [
+        validation?.onBlurAsync?.(stateRef.current.value),
+      ];
 
       if (!stateRef.current.isDirty) {
-        asyncValidations.push(validateOnChangeAsync?.(stateRef.current.value));
+        asyncValidations.push(
+          validation?.onChangeAsync?.(stateRef.current.value),
+        );
       }
 
       const [blurError, changeError] = await Promise.all(asyncValidations);
@@ -170,6 +187,10 @@ export function Field<T>(props: FieldProps<T>) {
     isValidatingOnBlurRef.current = false;
     if (currentValidation !== validationIdRef.current) {
       return;
+    }
+
+    if (errorMessage && validationTimeoutRef.current) {
+      clearTimeout(validationTimeoutRef.current);
     }
 
     onChange({

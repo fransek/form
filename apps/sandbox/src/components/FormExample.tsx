@@ -70,8 +70,10 @@ export function FormExample() {
       <Field
         state={formData.summary}
         onChange={(summary) => setFormData((prev) => ({ ...prev, summary }))}
-        validateOnChange={validateSummary}
-        validateOnChangeAsync={validateSummaryAsync}
+        validation={{
+          onChange: validateSummary,
+          onChangeAsync: validateSummaryAsync,
+        }}
       >
         {(props) => (
           <Input
@@ -109,7 +111,7 @@ export function FormExample() {
       <Field
         state={formData.type}
         onChange={(type) => setFormData((prev) => ({ ...prev, type }))}
-        validateOnChange={validateType}
+        validation={{ onChange: validateType }}
       >
         {(props) => (
           <RadioGroup
@@ -131,7 +133,7 @@ export function FormExample() {
       <Field
         state={formData.priority}
         onChange={(priority) => setFormData((prev) => ({ ...prev, priority }))}
-        validateOnChange={validatePriority}
+        validation={{ onChange: validatePriority }}
       >
         {(props) => (
           <Select
@@ -172,9 +174,10 @@ export function FormExample() {
               },
             }))
           }
-          validateOnChange={(value) =>
-            validateStartDate(value, formData.dueDate.value)
-          }
+          validation={{
+            onChange: (value) =>
+              validateStartDate(value, formData.dueDate.value),
+          }}
           validateOnTouch
         >
           {(props) => (
@@ -206,9 +209,10 @@ export function FormExample() {
               },
             }))
           }
-          validateOnChange={(value) =>
-            validateDueDate(value, formData.startDate.value)
-          }
+          validation={{
+            onChange: (value) =>
+              validateDueDate(value, formData.startDate.value),
+          }}
           validateOnTouch
         >
           {(props) => (
@@ -233,7 +237,7 @@ export function FormExample() {
         onChange={(assignees) =>
           setFormData((prev) => ({ ...prev, assignees }))
         }
-        validateOnChange={validateAssignee}
+        validation={{ onChange: validateAssignee }}
         validateOnTouch
       >
         {(props) => (

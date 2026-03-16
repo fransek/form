@@ -28,7 +28,7 @@ export function Subtasks({ formData, setFormData }: SubtasksProps) {
               return { ...prev, subtasks: newSubtasks };
             })
           }
-          validateOnChange={validateSubtask}
+          validation={{ onChange: validateSubtask }}
         >
           {(props) => (
             <Input

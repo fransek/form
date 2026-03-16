@@ -33,10 +33,12 @@ const Input = ({
     <Field<string>
       state={form.field}
       onChange={(field) => setForm({ field })}
-      validateOnChange={validateOnChange}
-      validateOnChangeAsync={validateOnChangeAsync}
-      validateOnBlur={validateOnBlur}
-      validateOnBlurAsync={validateOnBlurAsync}
+      validation={{
+        onChange: validateOnChange,
+        onChangeAsync: validateOnChangeAsync,
+        onBlur: validateOnBlur,
+        onBlurAsync: validateOnBlurAsync,
+      }}
       validateOnTouch={validateOnTouch}
       debounceMs={debounceMs}
     >
