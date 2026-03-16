@@ -38,23 +38,22 @@ export function Field<T>(props: FieldProps<T>) {
   useEffect(() => {
     async function performValidation() {
       if (
-        !stateRef.current.isValid &&
         !stateRef.current.isValidating &&
         stateRef.current.isDirty &&
         stateRef.current.isTouched
       ) {
-        return false;
+        return stateRef.current.isValid;
       }
       validationIdRef.current++;
       pendingValidationRef.current = validate(
-        state,
+        stateRef.current,
         validation?.onChange,
         validation?.onBlur,
         validation?.onSubmit,
       );
       if (pendingValidationRef.current.isValid) {
         pendingValidationRef.current = await validateAsync(
-          state,
+          stateRef.current,
           validation?.onChangeAsync,
           validation?.onBlurAsync,
           validation?.onSubmitAsync,
@@ -80,7 +79,7 @@ export function Field<T>(props: FieldProps<T>) {
     return () => {
       unregisterField(id);
     };
-  }, [id, state, registerField, validation, onChange, unregisterField]);
+  }, [id, registerField, validation, onChange, unregisterField]);
 
   useEffect(() => {
     return () => {
