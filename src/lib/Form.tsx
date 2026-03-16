@@ -1,14 +1,21 @@
 import React, { useCallback, useRef } from "react";
-import { FieldMap, FormContextValue } from "./types";
+import { FieldMap, FormContextValue, ValidationMode } from "./types";
 
 interface FormProps extends Omit<React.ComponentProps<"form">, "onSubmit"> {
+  validationMode?: ValidationMode;
+  debounceMs?: number;
   onSubmit?: (
     e: React.SubmitEvent<HTMLFormElement>,
     validateAllFields: () => Promise<boolean>,
   ) => void;
 }
 
-export function Form({ onSubmit, ...props }: FormProps) {
+export function Form({
+  onSubmit,
+  validationMode,
+  debounceMs,
+  ...props
+}: FormProps) {
   const fieldsRef = useRef<FieldMap>(new Map());
 
   const registerField = useCallback(
@@ -51,6 +58,8 @@ export function Form({ onSubmit, ...props }: FormProps) {
       value={{
         registerField,
         unregisterField,
+        validationMode,
+        debounceMs,
       }}
     >
       <form onSubmit={(e) => onSubmit?.(e, validateAllFields)} {...props} />

@@ -5,7 +5,7 @@ export function validateSummary(value: string) {
 }
 
 export async function validateSummaryAsync(value: string) {
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  await new Promise((resolve) => setTimeout(resolve, 300));
   if (value.toLowerCase().includes("duplicate")) {
     return "Summary must be unique";
   }

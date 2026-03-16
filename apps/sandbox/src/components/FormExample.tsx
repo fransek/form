@@ -178,7 +178,6 @@ export function FormExample() {
             onChange: (value) =>
               validateStartDate(value, formData.dueDate.value),
           }}
-          validateOnTouch
         >
           {(props) => (
             <DatePicker
@@ -213,7 +212,6 @@ export function FormExample() {
             onChange: (value) =>
               validateDueDate(value, formData.startDate.value),
           }}
-          validateOnTouch
         >
           {(props) => (
             <DatePicker
@@ -238,7 +236,7 @@ export function FormExample() {
           setFormData((prev) => ({ ...prev, assignees }))
         }
         validation={{ onChange: validateAssignee }}
-        validateOnTouch
+        validationMode="dirty"
       >
         {(props) => (
           <CheckboxGroup
