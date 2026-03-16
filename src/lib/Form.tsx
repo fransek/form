@@ -15,19 +15,36 @@ export interface FocusFirstErrorOptions {
   scrollToElement?: ((element: HTMLElement) => void) | false;
 }
 
-const focusableSelector = [
-  "input:not([disabled]):not([tabindex='-1'])",
-  "select:not([disabled]):not([tabindex='-1'])",
-  "textarea:not([disabled]):not([tabindex='-1'])",
-  "button:not([disabled]):not([tabindex='-1'])",
-  "a[href]:not([tabindex='-1'])",
-  "[role='radio']:not([aria-disabled='true'])",
-  "[role='checkbox']:not([aria-disabled='true'])",
-  "[role='switch']:not([aria-disabled='true'])",
-  "[tabindex]:not([tabindex='-1'])",
-  "[contenteditable='true']",
+// Exclude elements that are hidden or removed from the accessibility tree.
+// Tab order exclusion is applied separately so programmatic focus (tabindex=-1)
+// can still be used when explicitly requested.
+const hiddenExclusions = ":not([hidden]):not([aria-hidden='true'])";
+const tabOrderExclusion = ":not([tabindex='-1'])";
+const tabbableSelector = [
+  `input:not([disabled]):not([type='hidden'])${hiddenExclusions}${tabOrderExclusion}`,
+  `select:not([disabled])${hiddenExclusions}${tabOrderExclusion}`,
+  `textarea:not([disabled])${hiddenExclusions}${tabOrderExclusion}`,
+  `button:not([disabled])${hiddenExclusions}${tabOrderExclusion}`,
+  `a[href]${hiddenExclusions}${tabOrderExclusion}`,
+  `[role='radio']:not([aria-disabled='true'])${hiddenExclusions}${tabOrderExclusion}`,
+  `[role='checkbox']:not([aria-disabled='true'])${hiddenExclusions}${tabOrderExclusion}`,
+  `[role='switch']:not([aria-disabled='true'])${hiddenExclusions}${tabOrderExclusion}`,
+  `[contenteditable='true']${hiddenExclusions}${tabOrderExclusion}`,
+  `[tabindex]${hiddenExclusions}${tabOrderExclusion}`,
 ].join(",");
-
+const programmaticFocusableSelector = `[tabindex]${hiddenExclusions}`;
+// Offset to account for fixed headers when scrolling invalid fields into view.
+const SCROLL_OFFSET_PX = 100;
+let prefersReducedMotionQuery: MediaQueryList | null | undefined;
+const prefersReducedMotion = () => {
+  if (prefersReducedMotionQuery === undefined) {
+    prefersReducedMotionQuery =
+      typeof window !== "undefined" && typeof window.matchMedia === "function"
+        ? window.matchMedia("(prefers-reduced-motion: reduce)")
+        : null;
+  }
+  return prefersReducedMotionQuery?.matches ?? false;
+};
 export function Form({
   onSubmit,
   validationMode,
@@ -98,34 +115,31 @@ export function useFormContext() {
 }
 
 function defaultGetFocusElement(element: HTMLElement) {
-  if (element.role === "radiogroup") {
-    const radio = element.querySelector<HTMLElement>('[role="radio"]');
-    if (radio) {
-      return radio;
-    }
-  }
-
-  if (element.role === "group") {
-    const checkbox = element.querySelector<HTMLElement>('[role="checkbox"]');
-    if (checkbox) {
-      return checkbox;
-    }
-  }
-
-  if (element.matches(focusableSelector)) {
+  if (element.matches(tabbableSelector)) {
     return element;
   }
 
-  return element.querySelector<HTMLElement>(focusableSelector) ?? element;
+  const focusableDescendant =
+    element.querySelector<HTMLElement>(tabbableSelector);
+  if (focusableDescendant) {
+    return focusableDescendant;
+  }
+
+  if (element.matches(programmaticFocusableSelector)) {
+    return element;
+  }
+
+  return (
+    element.querySelector<HTMLElement>(programmaticFocusableSelector) ?? null
+  );
 }
 
 function defaultScrollToElement(element: HTMLElement) {
   const rect = element.getBoundingClientRect();
-  if (rect) {
-    window.scrollTo({
-      top: rect.top + window.scrollY - 100,
-    });
-  }
+  window.scrollTo({
+    top: Math.max(0, rect.top + window.scrollY - SCROLL_OFFSET_PX),
+    behavior: prefersReducedMotion() ? "auto" : "smooth",
+  });
 }
 
 export function focusFirstError(
@@ -153,9 +167,7 @@ export function focusFirstError(
       ? null
       : (options?.scrollToElement ?? defaultScrollToElement);
 
-  const firstInvalid =
-    getFocusElement(firstInvalidField) ??
-    defaultGetFocusElement(firstInvalidField);
+  const firstInvalid = getFocusElement(firstInvalidField);
 
   if (!firstInvalid) {
     return;

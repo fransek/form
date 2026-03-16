@@ -33,6 +33,7 @@ describe("Form", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    document.body.innerHTML = "";
   });
 
   it("should validate and commit all registered fields on submit", async () => {
@@ -128,6 +129,8 @@ describe("Form", () => {
     container.appendChild(fallback);
     document.body.appendChild(container);
     const customFocusEl = document.createElement("textarea");
+    customFocusEl.tabIndex = -1;
+    document.body.appendChild(customFocusEl);
     vi.spyOn(customFocusEl, "focus");
 
     focusFirstError([{ isValid: false, ref: container }], {
@@ -137,5 +140,31 @@ describe("Form", () => {
 
     expect(customFocusEl.focus).toHaveBeenCalled();
     expect(window.scrollTo).not.toHaveBeenCalled();
+  });
+
+  it("should fall back to programmatically focusable descendants", () => {
+    const container = document.createElement("div");
+    const offTabOrder = document.createElement("button");
+    offTabOrder.tabIndex = -1;
+    container.appendChild(offTabOrder);
+    document.body.appendChild(container);
+
+    focusFirstError([{ isValid: false, ref: container }]);
+
+    expect(offTabOrder).toHaveFocus();
+  });
+
+  it("should allow focusing elements outside the tab order when requested", () => {
+    const container = document.createElement("div");
+    const offTabOrder = document.createElement("input");
+    offTabOrder.tabIndex = -1;
+    container.appendChild(offTabOrder);
+    document.body.appendChild(container);
+
+    focusFirstError([{ isValid: false, ref: container }], {
+      getFocusElement: () => offTabOrder,
+    });
+
+    expect(offTabOrder).toHaveFocus();
   });
 });
