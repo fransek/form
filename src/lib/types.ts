@@ -28,7 +28,11 @@ export interface Validation<T> {
   onSubmitAsync?: AsyncValidator<T>;
 }
 
-export type ValidationMode = "touched" | "dirty" | "touchedAndDirty";
+export type ValidationMode =
+  | "touched"
+  | "dirty"
+  | "touchedAndDirty"
+  | "touchedOrDirty";
 
 export interface FieldProps<T> {
   state: FieldState<T>;

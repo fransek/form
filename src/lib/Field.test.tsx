@@ -86,6 +86,21 @@ describe("Field", () => {
       expectAttribute(input, "data-isvalid", "true");
       expectErrorMessage(input, null);
     });
+
+    it("should validate on change when validationMode is touchedOrDirty", async () => {
+      const validator = vi.fn(minLengthValidator(3));
+      const { user, input } = setupTest({
+        validationMode: "touchedOrDirty",
+        validateOnChange: validator,
+      });
+
+      await user.type(input, "a");
+
+      expect(validator).toHaveBeenCalledWith("a");
+      expectAttribute(input, "data-istouched", "false");
+      expectAttribute(input, "data-isvalid", "false");
+      expectErrorMessage(input, "Minimum 3 characters");
+    });
   });
 
   describe("handleBlur", () => {
@@ -101,6 +116,24 @@ describe("Field", () => {
       await user.type(input, "test");
       await blurInput(input);
       await waitFor(() => expectAttribute(input, "data-isdirty", "true"));
+    });
+
+    it("should validate on blur when validationMode is touchedOrDirty and field is pristine", async () => {
+      const validator = vi.fn(minLengthValidator(3));
+      const { user, input } = setupTest({
+        validationMode: "touchedOrDirty",
+        validateOnChange: validator,
+      });
+
+      input.focus();
+      await user.tab();
+
+      await waitFor(() => {
+        expect(validator).toHaveBeenCalledWith("");
+        expectAttribute(input, "data-istouched", "true");
+        expectAttribute(input, "data-isvalid", "false");
+        expectErrorMessage(input, "Minimum 3 characters");
+      });
     });
   });
 
