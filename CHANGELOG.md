@@ -4,6 +4,14 @@
 
 - **workflow:** added build step and switched to pnpm ([f8304c2](https://github.com/fransek/package-template/commit/f8304c24ea93083611b17e82d0519b4fe07d94a6))
 
+## 1.0.0 (2026-03-16)
+
+
+### Features
+
+* `Form` component and API changes ([#8](https://github.com/fransek/form/issues/8)) ([4e5c475](https://github.com/fransek/form/commit/4e5c47506b16264b5d9e790a4c3050bcfcfd6b72))
+* mvp ([#1](https://github.com/fransek/form/issues/1)) ([6571b0f](https://github.com/fransek/form/commit/6571b0f0bee1f687ac062ff27ad215814d5008b2))
+
 ## [1.1.0](https://github.com/fransek/package-template/compare/v1.0.6...v1.1.0) (2026-02-03)
 
 
