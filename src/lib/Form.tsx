@@ -1,38 +1,23 @@
 import React, { useCallback, useRef } from "react";
 import { FieldMap, FormContextValue, ValidationMode } from "./types";
 
+/** Props for the {@link Form} component. */
 interface FormProps extends Omit<React.ComponentProps<"form">, "onSubmit"> {
+  /** Default validation mode applied to all fields in the form. Defaults to `"touchedAndDirty"`. */
   validationMode?: ValidationMode;
+  /** Default debounce delay in milliseconds for async validators. Defaults to `500`. */
   debounceMs?: number;
+  /**
+   * Submit handler called when the form is submitted.
+   * Receives the submit event and a `validateAllFields` function that triggers
+   * validation on all registered fields and returns whether the form is valid.
+   */
   onSubmit?: (
     e: React.SubmitEvent<HTMLFormElement>,
-    validateAllFields: (options?: FocusFirstErrorOptions) => Promise<boolean>,
+    validateAllFields: () => Promise<boolean>,
   ) => void;
 }
 
-export interface FocusFirstErrorOptions {
-  getFocusElement?: (field: HTMLElement) => HTMLElement | null;
-  scrollToElement?: ((element: HTMLElement) => void) | false;
-}
-
-// Exclude elements that are hidden or removed from the accessibility tree.
-// Tab order exclusion is applied separately so programmatic focus (tabindex=-1)
-// can still be used when explicitly requested.
-const hiddenExclusions = ":not([hidden]):not([aria-hidden='true'])";
-const tabOrderExclusion = ":not([tabindex='-1'])";
-const tabbableSelector = [
-  `input:not([disabled]):not([type='hidden'])${hiddenExclusions}${tabOrderExclusion}`,
-  `select:not([disabled])${hiddenExclusions}${tabOrderExclusion}`,
-  `textarea:not([disabled])${hiddenExclusions}${tabOrderExclusion}`,
-  `button:not([disabled])${hiddenExclusions}${tabOrderExclusion}`,
-  `a[href]${hiddenExclusions}${tabOrderExclusion}`,
-  `[role='radio']:not([aria-disabled='true'])${hiddenExclusions}${tabOrderExclusion}`,
-  `[role='checkbox']:not([aria-disabled='true'])${hiddenExclusions}${tabOrderExclusion}`,
-  `[role='switch']:not([aria-disabled='true'])${hiddenExclusions}${tabOrderExclusion}`,
-  `[contenteditable='true']${hiddenExclusions}${tabOrderExclusion}`,
-  `[tabindex]${hiddenExclusions}${tabOrderExclusion}`,
-].join(",");
-const programmaticFocusableSelector = `[tabindex]${hiddenExclusions}`;
 // Offset to account for fixed headers when scrolling invalid fields into view.
 const SCROLL_OFFSET_PX = 100;
 let prefersReducedMotionQuery: MediaQueryList | null | undefined;
@@ -45,6 +30,15 @@ const prefersReducedMotion = () => {
   }
   return prefersReducedMotionQuery?.matches ?? false;
 };
+
+/**
+ * A form component that provides context for coordinating field validation.
+ *
+ * Wraps a native `<form>` element and prevents the default submit behavior.
+ * On submit, the `onSubmit` callback is called with the submit event and a
+ * `validateAllFields` function that can be used to trigger validation on all
+ * registered {@link Field} components and focus the first invalid field.
+ */
 export function Form({
   onSubmit,
   validationMode,
@@ -73,23 +67,20 @@ export function Form({
     fieldsRef.current.delete(id);
   }, []);
 
-  const validateAllFields = useCallback(
-    async (options?: FocusFirstErrorOptions) => {
-      const fields = Array.from(fieldsRef.current.values());
-      const validationPromises = fields.map(async (field) => ({
-        isValid: await field.validate(),
-        ref: field.ref,
-      }));
-      const results = await Promise.all(validationPromises);
-      fields.forEach((field) => field.commitPendingValidation());
-      const hasErrors = results.some((result) => !result.isValid);
-      if (hasErrors) {
-        focusFirstError(results, options);
-      }
-      return !hasErrors;
-    },
-    [],
-  );
+  const validateAllFields = useCallback(async () => {
+    const fields = Array.from(fieldsRef.current.values());
+    const validationPromises = fields.map(async (field) => ({
+      isValid: await field.validate(),
+      ref: field.ref,
+    }));
+    const results = await Promise.all(validationPromises);
+    fields.forEach((field) => field.commitPendingValidation());
+    const hasErrors = results.some((result) => !result.isValid);
+    if (hasErrors) {
+      focusFirstError(results);
+    }
+    return !hasErrors;
+  }, []);
 
   return (
     <FormContext.Provider
@@ -114,40 +105,15 @@ export function useFormContext() {
   return React.useContext(FormContext);
 }
 
-function defaultGetFocusElement(element: HTMLElement) {
-  if (element.matches(tabbableSelector)) {
-    return element;
-  }
-
-  const focusableDescendant =
-    element.querySelector<HTMLElement>(tabbableSelector);
-  if (focusableDescendant) {
-    return focusableDescendant;
-  }
-
-  if (element.matches(programmaticFocusableSelector)) {
-    return element;
-  }
-
-  return (
-    element.querySelector<HTMLElement>(programmaticFocusableSelector) ?? null
-  );
-}
-
-function defaultScrollToElement(element: HTMLElement) {
-  const rect = element.getBoundingClientRect();
-  window.scrollTo({
-    top: Math.max(0, rect.top + window.scrollY - SCROLL_OFFSET_PX),
-    behavior: prefersReducedMotion() ? "auto" : "smooth",
-  });
-}
-
+/**
+ * Focuses the first invalid field and scrolls it into view.
+ * The consumer is responsible for providing a focusable ref on each field.
+ */
 export function focusFirstError(
   results: {
     isValid: boolean;
     ref: HTMLElement | null;
   }[],
-  options?: FocusFirstErrorOptions,
 ) {
   const firstInvalidField = results
     .filter((field) => !field.isValid && field.ref)
@@ -161,21 +127,11 @@ export function focusFirstError(
     return;
   }
 
-  const getFocusElement = options?.getFocusElement ?? defaultGetFocusElement;
-  const scrollToElement =
-    options?.scrollToElement === false
-      ? null
-      : (options?.scrollToElement ?? defaultScrollToElement);
+  firstInvalidField.focus();
 
-  const firstInvalid = getFocusElement(firstInvalidField);
-
-  if (!firstInvalid) {
-    return;
-  }
-
-  firstInvalid.focus();
-
-  if (scrollToElement) {
-    scrollToElement(firstInvalid);
-  }
+  const rect = firstInvalidField.getBoundingClientRect();
+  window.scrollTo({
+    top: Math.max(0, rect.top + window.scrollY - SCROLL_OFFSET_PX),
+    behavior: prefersReducedMotion() ? "auto" : "smooth",
+  });
 }

@@ -1,5 +1,6 @@
 import { FieldState, SyncValidator, Validator } from "./types";
 
+/** Creates the initial state for a field with the given initial value. */
 export function createFieldState<T>(initialValue: T): FieldState<T> {
   return {
     value: initialValue,
@@ -11,6 +12,10 @@ export function createFieldState<T>(initialValue: T): FieldState<T> {
   };
 }
 
+/**
+ * Runs the provided synchronous validators against the current field value and returns an updated {@link FieldState}.
+ * Sets `isDirty` and `isTouched` to `true`. Stops at the first failing validator.
+ */
 export function validate<T>(
   state: FieldState<T>,
   ...validators: Array<SyncValidator<T> | undefined>
@@ -39,6 +44,10 @@ export function validate<T>(
   };
 }
 
+/**
+ * Runs the provided synchronous and/or asynchronous validators against the current field value and returns an updated {@link FieldState}.
+ * Sets `isDirty` and `isTouched` to `true`. All validators run in parallel; the first truthy error message is used.
+ */
 export async function validateAsync<T>(
   state: FieldState<T>,
   ...validators: Array<Validator<T> | undefined>
@@ -69,6 +78,10 @@ export async function validateAsync<T>(
   };
 }
 
+/**
+ * Runs the provided synchronous validators only if the field is dirty (i.e. the value has been changed).
+ * Returns the state unchanged if the field is not dirty.
+ */
 export function validateIfDirty<T>(
   state: FieldState<T>,
   ...validators: Array<SyncValidator<T> | undefined>
@@ -80,6 +93,10 @@ export function validateIfDirty<T>(
   return validate(state, ...validators);
 }
 
+/**
+ * Runs the provided synchronous and/or asynchronous validators only if the field is dirty (i.e. the value has been changed).
+ * Returns the state unchanged if the field is not dirty.
+ */
 export async function validateIfDirtyAsync<T>(
   state: FieldState<T>,
   ...validators: Array<Validator<T> | undefined>
