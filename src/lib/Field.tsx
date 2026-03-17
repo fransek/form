@@ -3,6 +3,12 @@ import { validate, validateAsync } from "./fieldState";
 import { useFormContext } from "./Form";
 import { FieldProps, FieldState } from "./types";
 
+/**
+ * A headless form field component that manages validation state using a render prop pattern.
+ *
+ * Connects to a parent {@link Form} for submit validation coordination.
+ * Passes current field state and event handlers to the `children` render function.
+ */
 export function Field<T>(props: FieldProps<T>) {
   const {
     registerField,

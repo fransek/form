@@ -1,4 +1,19 @@
-export * from "./lib/Field";
-export * from "./lib/fieldState";
-export * from "./lib/Form";
-export * from "./lib/types";
+export { Field } from "./lib/Field";
+export {
+  createFieldState,
+  validate,
+  validateAsync,
+  validateIfDirty,
+  validateIfDirtyAsync,
+} from "./lib/fieldState";
+export { Form } from "./lib/Form";
+export type {
+  AsyncValidator,
+  FieldProps,
+  FieldRenderProps,
+  FieldState,
+  SyncValidator,
+  Validation,
+  ValidationMode,
+  Validator,
+} from "./lib/types";

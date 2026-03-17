@@ -1,15 +1,31 @@
 import React, { useCallback, useRef } from "react";
 import { FieldMap, FormContextValue, ValidationMode } from "./types";
 
+/** Props for the {@link Form} component. */
 interface FormProps extends Omit<React.ComponentProps<"form">, "onSubmit"> {
+  /** Default validation mode applied to all fields in the form. Defaults to `"touchedAndDirty"`. */
   validationMode?: ValidationMode;
+  /** Default debounce delay in milliseconds for async validators. Defaults to `500`. */
   debounceMs?: number;
+  /**
+   * Submit handler called when the form is submitted.
+   * Receives the submit event and a `validateAllFields` function that triggers
+   * validation on all registered fields and returns whether the form is valid.
+   */
   onSubmit?: (
     e: React.SubmitEvent<HTMLFormElement>,
     validateAllFields: () => Promise<boolean>,
   ) => void;
 }
 
+/**
+ * A form component that provides context for coordinating field validation.
+ *
+ * Wraps a native `<form>` element and prevents the default submit behavior.
+ * On submit, the `onSubmit` callback is called with the submit event and a
+ * `validateAllFields` function that can be used to trigger validation on all
+ * registered {@link Field} components and focus the first invalid field.
+ */
 export function Form({
   onSubmit,
   validationMode,
