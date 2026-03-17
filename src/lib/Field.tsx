@@ -29,6 +29,7 @@ export function Field<T>(props: FieldProps<T>) {
   } = props;
 
   const stateRef = useRef(state);
+  stateRef.current = state;
   const validationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -39,17 +40,8 @@ export function Field<T>(props: FieldProps<T>) {
   const fieldRef = useRef<HTMLElement | null>(null);
   const id = useId();
 
-  stateRef.current = state;
-
   useEffect(() => {
     async function performValidation() {
-      if (
-        !stateRef.current.isValidating &&
-        stateRef.current.isDirty &&
-        stateRef.current.isTouched
-      ) {
-        return stateRef.current.isValid;
-      }
       validationIdRef.current++;
       pendingValidationRef.current = validate(
         stateRef.current,
@@ -109,7 +101,7 @@ export function Field<T>(props: FieldProps<T>) {
       validationMode === "touchedOrDirty" ||
       stateRef.current.isTouched;
 
-    if (shouldValidate && (validation?.onChange || validation?.onChangeAsync)) {
+    if (shouldValidate) {
       const errorMessage = validation?.onChange?.(value);
       const willValidateAsync = Boolean(
         validation?.onChangeAsync && !errorMessage,
@@ -160,9 +152,10 @@ export function Field<T>(props: FieldProps<T>) {
       validation?.onBlur?.(stateRef.current.value);
 
     const shouldValidateOnChange =
-      validationMode === "touched" ||
-      validationMode === "touchedOrDirty" ||
-      (validationMode === "touchedAndDirty" && stateRef.current.isDirty);
+      !stateRef.current.isTouched &&
+      (validationMode === "touched" ||
+        (validationMode === "touchedOrDirty" && !stateRef.current.isDirty) ||
+        (validationMode === "touchedAndDirty" && stateRef.current.isDirty));
 
     if (!errorMessage && shouldValidateOnChange && validation?.onChange) {
       errorMessage = validation.onChange(stateRef.current.value);

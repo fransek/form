@@ -14,7 +14,7 @@ interface FormProps extends Omit<React.ComponentProps<"form">, "onSubmit"> {
    */
   onSubmit?: (
     e: React.SubmitEvent<HTMLFormElement>,
-    validateAllFields: () => Promise<boolean>,
+    validateForm: () => Promise<boolean>,
   ) => void;
 }
 
@@ -54,7 +54,7 @@ export function Form({
     fieldsRef.current.delete(id);
   }, []);
 
-  const validateAllFields = useCallback(async () => {
+  const validateForm = useCallback(async () => {
     const fields = Array.from(fieldsRef.current.values());
     const validationPromises = fields.map(async (field) => ({
       isValid: await field.validate(),
@@ -78,7 +78,7 @@ export function Form({
         debounceMs,
       }}
     >
-      <form onSubmit={(e) => onSubmit?.(e, validateAllFields)} {...props} />
+      <form onSubmit={(e) => onSubmit?.(e, validateForm)} {...props} />
     </FormContext.Provider>
   );
 }
@@ -110,28 +110,9 @@ export function focusFirstError(
     return;
   }
 
-  let firstInvalid = firstInvalidField;
-
-  if (firstInvalid.role === "radiogroup") {
-    const radio = firstInvalid.querySelector<HTMLElement>('[role="radio"]');
-    if (radio) {
-      firstInvalid = radio;
-    }
-  }
-
-  if (firstInvalid.role === "group") {
-    const checkbox =
-      firstInvalid.querySelector<HTMLElement>('[role="checkbox"]');
-    if (checkbox) {
-      firstInvalid = checkbox;
-    }
-  }
-
-  firstInvalid.focus();
-  const rect = firstInvalid.getBoundingClientRect();
-  if (rect) {
-    window.scrollTo({
-      top: rect.top + window.scrollY - 100,
-    });
-  }
+  firstInvalidField.focus();
+  const rect = firstInvalidField.getBoundingClientRect();
+  window.scrollTo({
+    top: rect.top + window.scrollY - 100,
+  });
 }

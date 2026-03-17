@@ -54,10 +54,10 @@ export function FormExample() {
   return (
     <Form
       className="mx-2 flex flex-col gap-4 rounded-lg border p-6"
-      onSubmit={async (e, validate) => {
+      onSubmit={async (e, validateForm) => {
         e.preventDefault();
         setIsSubmitting(true);
-        const isValid = await validate();
+        const isValid = await validateForm();
         if (isValid) {
           setDialogOpen(true);
         }
@@ -120,10 +120,9 @@ export function FormExample() {
             onValueChange={props.handleChange}
             onBlur={props.handleBlur}
             value={props.value}
-            ref={props.ref}
             isValidating={props.isValidating}
           >
-            <Radio value="bug" label="Bug" />
+            <Radio value="bug" label="Bug" ref={props.ref} />
             <Radio value="feature" label="Feature" />
             <Radio value="improvement" label="Improvement" />
           </RadioGroup>
@@ -245,10 +244,9 @@ export function FormExample() {
             onValueChange={props.handleChange}
             onBlur={props.handleBlur}
             value={props.value}
-            ref={props.ref}
             isValidating={props.isValidating}
           >
-            <Checkbox value="alice" label="Alice" />
+            <Checkbox value="alice" label="Alice" ref={props.ref} />
             <Checkbox value="bob" label="Bob" />
             <Checkbox value="charlie" label="Charlie" />
           </CheckboxGroup>
