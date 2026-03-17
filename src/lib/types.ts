@@ -81,7 +81,6 @@ export type AsyncValidator<T> = (value: T) => Promise<React.ReactNode>;
 /** A synchronous or asynchronous validator function. */
 export type Validator<T> = SyncValidator<T> | AsyncValidator<T>;
 
-/** The value provided by {@link FormContext} to nested {@link Field} components. */
 export interface FormContextValue {
   /** Default validation mode applied to all fields in the form. */
   validationMode?: ValidationMode;
@@ -98,7 +97,6 @@ export interface FormContextValue {
   unregisterField: (id: string) => void;
 }
 
-/** A map of fields registered within a {@link Form}, keyed by field id. */
 export type FieldMap = Map<
   string,
   {

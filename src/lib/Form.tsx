@@ -83,22 +83,15 @@ export function Form({
   );
 }
 
-/** React context that provides form state and field registration to nested {@link Field} components. */
 export const FormContext = React.createContext<FormContextValue>({
   registerField: () => {},
   unregisterField: () => {},
 });
 
-/** Hook to access the {@link FormContext}. Returns the current {@link FormContextValue}. */
 export function useFormContext() {
   return React.useContext(FormContext);
 }
 
-/**
- * Focuses and scrolls to the first invalid field in the provided results array.
- * Fields are sorted by their DOM position so that the topmost invalid field receives focus.
- * Handles `radiogroup` and `group` roles by delegating focus to the first child element.
- */
 export function focusFirstError(
   results: {
     isValid: boolean;
