@@ -38,9 +38,13 @@ export default function Page() {
             }
           },
           onBlurAsync: async (email) => {
-            await new Promise((resolve) => setTimeout(resolve, 500));
-            if (email === "test@example.com") {
-              return "This email is already in use";
+            const response = await fetch(`/api/validate-email?email=${email}`, {
+              cache: "force-cache",
+              next: { revalidate: 60 },
+            });
+            if (!response.ok) {
+              const data = await response.json();
+              return data.message;
             }
           },
         }}

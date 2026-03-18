@@ -145,6 +145,19 @@ export function Field<T>(props: FieldProps<T>) {
   async function handleBlur() {
     onBlur?.();
 
+    const shouldValidateOnBlur =
+      validationMode === "touched" ||
+      validationMode === "touchedOrDirty" ||
+      stateRef.current.isDirty;
+
+    if (!shouldValidateOnBlur) {
+      onChange({
+        ...stateRef.current,
+        isTouched: true,
+      });
+      return;
+    }
+
     const currentValidation = validationIdRef.current;
 
     let errorMessage =
