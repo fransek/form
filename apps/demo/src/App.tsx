@@ -1,262 +1,300 @@
-import type { FieldState, SyncValidator } from "@fransek/form";
+"use client";
+
 import { createFieldState, Field, Form } from "@fransek/form";
-import type { SubmitEvent } from "react";
 import { useState } from "react";
 import styles from "./App.module.css";
 
-type ContactFormState = {
-  name: FieldState<string>;
-  email: FieldState<string>;
-  message: FieldState<string>;
-};
-
-const createInitialState = (): ContactFormState => ({
-  name: createFieldState(""),
+const initialFormData = {
   email: createFieldState(""),
-  message: createFieldState(""),
-});
-
-const required =
-  (label: string): SyncValidator<string> =>
-  (value) =>
-    value.trim() ? undefined : `${label} is required`;
-
-const validateEmail: SyncValidator<string> = (value) => {
-  if (!value.trim()) {
-    return "Email is required";
-  }
-
-  return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)
-    ? undefined
-    : "Enter a valid email address";
-};
-
-const validateMessage: SyncValidator<string> = (value) => {
-  const trimmed = value.trim();
-  if (!trimmed) {
-    return undefined;
-  }
-
-  return trimmed.length < 10
-    ? "Share a few more details (min. 10 characters)"
-    : undefined;
+  password: createFieldState(""),
+  repeatPassword: createFieldState(""),
+  acceptTerms: createFieldState(false),
+  notifications: createFieldState([] as string[]),
+  gender: createFieldState<string | null>(null),
 };
 
 export default function App() {
-  const [formState, setFormState] =
-    useState<ContactFormState>(createInitialState);
-  const [submittedValues, setSubmittedValues] = useState<{
-    name: string;
-    email: string;
-  } | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  async function handleSubmit(
-    event: SubmitEvent<HTMLFormElement>,
-    validateForm: () => Promise<boolean>,
-  ) {
-    event.preventDefault();
-    setIsSubmitting(true);
-
-    const isValid = await validateForm();
-    if (isValid) {
-      setSubmittedValues({
-        name: formState.name.value,
-        email: formState.email.value,
-      });
-      setFormState(createInitialState());
-    }
-
-    setIsSubmitting(false);
-  }
-
-  function handleReset() {
-    setFormState(createInitialState());
-    setSubmittedValues(null);
-  }
-
-  const nameHintId = "name-hint";
-  const nameErrorId = "name-error";
-  const emailHintId = "email-hint";
-  const emailErrorId = "email-error";
-  const messageHintId = "message-hint";
-  const messageErrorId = "message-error";
-
+  const [formData, setFormData] = useState(initialFormData);
   return (
-    <div className={styles.page}>
-      <header className={styles.header}>
-        <p className={styles.tag}>Vite demo</p>
-        <h1 className={styles.title}>Forms with @fransek/form</h1>
-        <p className={styles.lead}>
-          A tiny example showing how to wire up headless validation and
-          submission using the library in a Vite app.
-        </p>
-      </header>
-
+    <main className={styles.main}>
       <Form
-        className={styles.card}
-        onSubmit={handleSubmit}
-        onReset={handleReset}
+        onSubmit={async (e, validateForm) => {
+          e.preventDefault();
+          const isValid = await validateForm();
+          if (isValid) {
+            alert("Form submitted successfully!");
+          }
+        }}
+        onReset={() => setFormData(initialFormData)}
+        validationMode="touchedAndDirty"
+        className={styles.form}
       >
+        <h1 className={styles.heading}>Sign Up</h1>
         <Field
-          state={formState.name}
-          onChange={(name) => setFormState((prev) => ({ ...prev, name }))}
-          validation={{ onChange: required("Name") }}
+          state={formData.email}
+          onChange={(email) => setFormData((prev) => ({ ...prev, email }))}
+          validation={{
+            onChange: (email) => {
+              if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                return "Please enter a valid email address";
+              }
+            },
+            onChangeAsync: async (email) => {
+              await new Promise((resolve) => setTimeout(resolve, 500));
+              if (email === "test@example.com") {
+                return "This email is already in use";
+              }
+            },
+          }}
         >
-          {({
-            value,
-            handleChange,
-            handleBlur,
-            ref,
-            errorMessage,
-            isValid,
-          }) => {
-            const describedBy = errorMessage ? nameErrorId : nameHintId;
-            return (
-              <label className={styles.field}>
-                <div className={styles.labelRow}>
-                  <span className={styles.label}>Name</span>
-                  <span className={styles.required}>Required</span>
+          {(props) => (
+            <div className={styles.field}>
+              <label htmlFor={"email"} className={styles.label}>
+                Email
+              </label>
+              <input
+                type="email"
+                value={props.value}
+                onChange={(e) => props.handleChange(e.target.value)}
+                onBlur={props.handleBlur}
+                ref={props.ref}
+                autoComplete="new-password" // disable browser autocomplete
+                aria-describedby={"email-error"}
+                aria-invalid={!props.isValid}
+                id={"email"}
+                className={styles.input}
+              />
+              {props.errorMessage ? (
+                <div className={styles.error} id={"email-error"}>
+                  {props.errorMessage}
                 </div>
+              ) : (
+                props.isValidating && (
+                  <div className={styles.validating}>Checking email...</div>
+                )
+              )}
+            </div>
+          )}
+        </Field>
+        <Field
+          state={formData.password}
+          onChange={(password) =>
+            setFormData((prev) => ({ ...prev, password }))
+          }
+          validation={{
+            onChange: (password) => {
+              if (password.length < 6) {
+                return "Password must be at least 6 characters";
+              }
+            },
+          }}
+        >
+          {(props) => (
+            <div className={styles.field}>
+              <label htmlFor={"password"} className={styles.label}>
+                Password
+              </label>
+              <input
+                type="password"
+                value={props.value}
+                onChange={(e) => props.handleChange(e.target.value)}
+                onBlur={props.handleBlur}
+                ref={props.ref}
+                autoComplete="new-password" // disable browser autocomplete
+                aria-describedby={"password-error"}
+                aria-invalid={!props.isValid}
+                id={"password"}
+                className={styles.input}
+              />
+
+              {props.errorMessage && (
+                <div className={styles.error} id={"password-error"}>
+                  {props.errorMessage}
+                </div>
+              )}
+            </div>
+          )}
+        </Field>
+        <Field
+          state={formData.repeatPassword}
+          onChange={(repeatPassword) =>
+            setFormData((prev) => ({ ...prev, repeatPassword }))
+          }
+          validation={{
+            onChange: (repeatPassword) => {
+              if (repeatPassword !== formData.password.value) {
+                return "Passwords do not match";
+              }
+            },
+          }}
+        >
+          {(props) => (
+            <div className={styles.field}>
+              <label htmlFor={"repeatPassword"} className={styles.label}>
+                Repeat Password
+              </label>
+              <input
+                type="password"
+                value={props.value}
+                onChange={(e) => props.handleChange(e.target.value)}
+                onBlur={props.handleBlur}
+                ref={props.ref}
+                aria-describedby={"repeatPassword-error"}
+                aria-invalid={!props.isValid}
+                id={"repeatPassword"}
+                className={styles.input}
+              />
+              {props.errorMessage && (
+                <div className={styles.error} id={"repeatPassword-error"}>
+                  {props.errorMessage}
+                </div>
+              )}
+            </div>
+          )}
+        </Field>
+        <Field
+          state={formData.gender}
+          onChange={(gender) => setFormData((prev) => ({ ...prev, gender }))}
+          validation={{
+            onChange: (gender) => {
+              if (!gender) {
+                return "Please select a gender";
+              }
+            },
+          }}
+        >
+          {(props) => (
+            <div
+              role="radiogroup"
+              aria-describedby={"gender-error"}
+              aria-invalid={!props.isValid}
+              aria-labelledby={"gender-label"}
+              className={styles.field}
+            >
+              <span id={"gender-label"} className={styles.label}>
+                Gender
+              </span>
+              <div className={styles.radioButtons}>
+                {["male", "female", "other"].map((option, i) => (
+                  <label key={option} className={styles.radioLabel}>
+                    <input
+                      type="radio"
+                      name="gender"
+                      value={option}
+                      checked={props.value === option}
+                      onChange={() => props.handleChange(option)}
+                      onBlur={props.handleBlur}
+                      ref={i === 0 ? props.ref : null}
+                    />
+                    {option.charAt(0).toUpperCase() + option.slice(1)}
+                  </label>
+                ))}
+              </div>
+              {props.errorMessage && (
+                <div className={styles.error} id={"gender-error"}>
+                  {props.errorMessage}
+                </div>
+              )}
+            </div>
+          )}
+        </Field>
+        <Field
+          state={formData.notifications}
+          onChange={(notifications) =>
+            setFormData((prev) => ({ ...prev, notifications }))
+          }
+          validation={{
+            onChange: (notifications) => {
+              if (notifications.length === 0) {
+                return "Please select at least one notification method";
+              }
+            },
+          }}
+        >
+          {(props) => (
+            <fieldset className={styles.fieldset}>
+              <legend className={styles.srOnly}>Notifications</legend>
+              <span aria-hidden className={styles.label}>
+                Notifications
+              </span>
+              <div className={styles.checkboxes}>
+                {["email", "sms", "push"].map((option, i) => (
+                  <label key={option} className={styles.checkboxLabel}>
+                    <input
+                      type="checkbox"
+                      value={option}
+                      checked={props.value.includes(option)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          props.handleChange([...props.value, option]);
+                        } else {
+                          props.handleChange(
+                            props.value.filter((value) => value !== option),
+                          );
+                        }
+                      }}
+                      onBlur={props.handleBlur}
+                      ref={i === 0 ? props.ref : null}
+                      aria-describedby={"notifications-error"}
+                      aria-invalid={!props.isValid}
+                    />
+                    {option.charAt(0).toUpperCase() + option.slice(1)}
+                  </label>
+                ))}
+              </div>
+              {props.errorMessage && (
+                <div className={styles.error} id={"notifications-error"}>
+                  {props.errorMessage}
+                </div>
+              )}
+            </fieldset>
+          )}
+        </Field>
+        <Field
+          state={formData.acceptTerms}
+          onChange={(acceptTerms) =>
+            setFormData((prev) => ({ ...prev, acceptTerms }))
+          }
+          validation={{
+            onSubmit: (acceptTerms) => {
+              if (!acceptTerms) {
+                return "You must accept the terms and conditions";
+              }
+            },
+          }}
+        >
+          {(props) => (
+            <div className={styles.field}>
+              <label htmlFor={"acceptTerms"} className={styles.checkboxLabel}>
                 <input
-                  ref={ref}
-                  value={value}
-                  onChange={(event) => handleChange(event.target.value)}
-                  onBlur={handleBlur}
-                  placeholder="Jane Doe"
-                  className={styles.input}
-                  aria-invalid={isValid === false}
-                  aria-describedby={describedBy}
+                  type="checkbox"
+                  checked={props.value}
+                  onChange={(e) => props.handleChange(e.target.checked)}
+                  onBlur={props.handleBlur}
+                  ref={props.ref}
+                  aria-describedby={"acceptTerms-error"}
+                  aria-invalid={!props.isValid}
+                  id={"acceptTerms"}
                 />
-                {errorMessage ? (
-                  <span id={nameErrorId} className={styles.error}>
-                    {errorMessage}
-                  </span>
-                ) : (
-                  <span id={nameHintId} className={styles.hint}>
-                    Keep it friendly—this is just a demo.
-                  </span>
-                )}
+                I accept the terms and conditions
               </label>
-            );
-          }}
-        </Field>
-
-        <Field
-          state={formState.email}
-          onChange={(email) => setFormState((prev) => ({ ...prev, email }))}
-          validation={{ onChange: validateEmail }}
-        >
-          {({
-            value,
-            handleChange,
-            handleBlur,
-            ref,
-            errorMessage,
-            isValid,
-          }) => {
-            const describedBy = errorMessage ? emailErrorId : emailHintId;
-            return (
-              <label className={styles.field}>
-                <div className={styles.labelRow}>
-                  <span className={styles.label}>Email</span>
-                  <span className={styles.required}>Required</span>
+              {props.errorMessage && (
+                <div className={styles.error} id={"acceptTerms-error"}>
+                  {props.errorMessage}
                 </div>
-                <input
-                  ref={ref}
-                  value={value}
-                  inputMode="email"
-                  onChange={(event) => handleChange(event.target.value)}
-                  onBlur={handleBlur}
-                  placeholder="you@example.com"
-                  className={styles.input}
-                  aria-invalid={isValid === false}
-                  aria-describedby={describedBy}
-                />
-                {errorMessage ? (
-                  <span id={emailErrorId} className={styles.error}>
-                    {errorMessage}
-                  </span>
-                ) : (
-                  <span id={emailHintId} className={styles.hint}>
-                    We&apos;ll only use this to confirm your submission.
-                  </span>
-                )}
-              </label>
-            );
-          }}
+              )}
+            </div>
+          )}
         </Field>
-
-        <Field
-          state={formState.message}
-          onChange={(message) => setFormState((prev) => ({ ...prev, message }))}
-          validation={{ onChange: validateMessage }}
-          validationMode="touchedOrDirty"
-        >
-          {({
-            value,
-            handleChange,
-            handleBlur,
-            ref,
-            errorMessage,
-            isValid,
-          }) => {
-            const describedBy = errorMessage ? messageErrorId : messageHintId;
-            return (
-              <label className={styles.field}>
-                <div className={styles.labelRow}>
-                  <span className={styles.label}>Message</span>
-                  <span className={styles.optional}>Optional</span>
-                </div>
-                <textarea
-                  ref={ref}
-                  value={value}
-                  onChange={(event) => handleChange(event.target.value)}
-                  onBlur={handleBlur}
-                  rows={4}
-                  placeholder="Tell us what you need..."
-                  className={styles.textarea}
-                  aria-invalid={isValid === false}
-                  aria-describedby={describedBy}
-                />
-                {errorMessage ? (
-                  <span id={messageErrorId} className={styles.error}>
-                    {errorMessage}
-                  </span>
-                ) : (
-                  <span id={messageHintId} className={styles.hint}>
-                    Validation runs when you touch or change this field.
-                  </span>
-                )}
-              </label>
-            );
-          }}
-        </Field>
-
-        <div className={styles.actions}>
-          <button type="reset" className={styles.secondaryButton}>
+        <div className={styles.buttonRow}>
+          <button type="submit" className={styles.submitButton}>
+            Submit
+          </button>
+          <button type="reset" className={styles.resetButton}>
             Reset
           </button>
-          <button
-            type="submit"
-            className={styles.primaryButton}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? "Validating…" : "Send message"}
-          </button>
-        </div>
-
-        <div className={styles.status} role="status" aria-live="polite">
-          {submittedValues ? (
-            <span className={styles.success}>
-              Thanks {submittedValues.name || "there"}! We&apos;ll reply at{" "}
-              {submittedValues.email}.
-            </span>
-          ) : (
-            <span>Submit the form to see validation in action.</span>
-          )}
         </div>
       </Form>
-    </div>
+    </main>
   );
 }

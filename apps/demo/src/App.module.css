@@ -1,60 +1,41 @@
-.page {
+.main {
+  align-items: center;
+  background: #11151d;
+  color: #f8fafc;
+  display: flex;
+  justify-content: center;
   min-height: 100vh;
+}
+
+.form {
+  border: 1px solid #1e293b;
+  border-radius: 1rem;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  padding: 3rem 1.5rem;
-  background: radial-gradient(circle at 20% 20%, #e0f2fe, #f8fafc 30%),
-    radial-gradient(circle at 80% 0%, #fef2f2, #f8fafc 32%),
-    #f8fafc;
-  color: #0f172a;
+  margin-inline: 1rem;
+  max-width: 32rem;
+  padding: 2rem;
+  width: 100%;
 }
 
-.header {
-  max-width: 720px;
-  margin: 0 auto;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.tag {
-  align-self: center;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.35rem 0.75rem;
-  border-radius: 999px;
-  border: 1px solid #dbeafe;
-  background: #e0f2fe;
-  color: #1d4ed8;
+.heading {
+  font-size: 1.5rem;
   font-weight: 600;
-  letter-spacing: 0.01em;
-}
-
-.title {
-  font-size: clamp(2rem, 3vw, 2.5rem);
   margin: 0;
 }
 
-.lead {
-  margin: 0;
-  color: #475569;
-  line-height: 1.6;
-}
-
-.card {
-  max-width: 720px;
-  margin: 0 auto;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 1rem;
-  padding: 1.5rem;
-  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.08);
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+.input {
+  background: #1e293b;
+  border: none;
+  border-radius: 0.375rem;
+  color: #f8fafc;
+  font-family: inherit;
+  font-size: 1rem;
+  padding: 0.75rem 1rem;
+  &[aria-invalid="true"]:not(:focus) {
+    outline: 1px solid #f87171;
+  }
 }
 
 .field {
@@ -63,125 +44,75 @@
   gap: 0.5rem;
 }
 
-.labelRow {
+.fieldset {
+  border: none;
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
+  flex-direction: column;
   gap: 0.5rem;
+  padding: 0;
 }
 
 .label {
-  font-weight: 600;
-  color: #0f172a;
+  font-size: 0.875rem;
+  font-weight: 500;
 }
 
-.required,
-.optional {
-  font-size: 0.9rem;
-  border-radius: 999px;
-  padding: 0.15rem 0.6rem;
-  border: 1px solid #e2e8f0;
-  color: #475569;
-  background: #f8fafc;
-}
-
-.required {
-  color: #b42318;
-  border-color: #fecdd3;
-  background: #fff1f2;
-}
-
-.input,
-.textarea {
-  width: 100%;
-  border-radius: 0.75rem;
-  border: 1px solid #cbd5e1;
-  background: #f8fafc;
-  padding: 0.85rem 1rem;
-  font: inherit;
-  color: #0f172a;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease,
-    background-color 0.2s ease;
-}
-
-.textarea {
-  resize: vertical;
-  min-height: 120px;
-}
-
-.input:focus,
-.textarea:focus {
-  outline: none;
-  background: #ffffff;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
-}
-
-.input[aria-invalid="true"],
-.textarea[aria-invalid="true"] {
-  border-color: #dc2626;
-  background: #fff5f5;
-  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.08);
-}
-
-.hint {
-  color: #475569;
-  font-size: 0.95rem;
+.radioLabel,
+.checkboxLabel {
+  align-items: center;
+  display: flex;
+  gap: 0.25rem;
 }
 
 .error {
-  color: #b42318;
-  font-weight: 600;
-  font-size: 0.95rem;
+  color: #f87171;
+  font-size: 0.875rem;
 }
 
-.actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.75rem;
+.validating {
+  color: #c0c0c0;
+  font-size: 0.875rem;
 }
 
-.primaryButton,
-.secondaryButton {
+.srOnly {
+  border: 0;
+  clip: rect(0 0 0 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  width: 1px;
+}
+
+.submitButton {
+  background: #2563eb;
   border: none;
-  border-radius: 0.75rem;
-  padding: 0.85rem 1.25rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: transform 0.12s ease, box-shadow 0.12s ease,
-    background-color 0.15s ease;
+  border-radius: 0.375rem;
+  color: #f8fafc;
+  font-family: inherit;
+  font-size: 1rem;
+  padding: 0.75rem 1rem;
 }
 
-.primaryButton {
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
-  color: #ffffff;
-  box-shadow: 0 12px 32px rgba(37, 99, 235, 0.25);
+.resetButton {
+  background: #1e293b;
+  border: none;
+  border-radius: 0.375rem;
+  color: #f8fafc;
+  font-family: inherit;
+  font-size: 1rem;
+  padding: 0.75rem 1rem;
 }
 
-.primaryButton:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  box-shadow: none;
+.buttonRow {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
 }
 
-.secondaryButton {
-  background: #e2e8f0;
-  color: #0f172a;
-}
-
-.primaryButton:not(:disabled):hover,
-.secondaryButton:hover {
-  transform: translateY(-1px);
-}
-
-.status {
-  margin-top: 0.5rem;
-  color: #475569;
-  font-size: 0.95rem;
-}
-
-.success {
-  color: #047857;
-  font-weight: 700;
+.checkboxes,
+.radioButtons {
+  display: flex;
+  gap: 1rem;
 }
