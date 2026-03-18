@@ -4,6 +4,19 @@
 
 [1]: https://www.npmjs.com/package/@fransek/ui?activeTab=versions
 
+## [0.3.0](https://github.com/fransek/form/compare/v0.2.1...v0.3.0) (2026-03-18)
+
+
+### Features
+
+* `validateForm` options ([92d32d8](https://github.com/fransek/form/commit/92d32d8f312504d5baad5ee2eb287edaa0d67e2c))
+
+
+### Bug Fixes
+
+* fixed onBlur validation running when it should not ([4d59416](https://github.com/fransek/form/commit/4d59416610dbe8f8893b8b828310038e1b40bee6))
+* optimized form submit validation ([8cc62cc](https://github.com/fransek/form/commit/8cc62ccb6d641f75f9b37401b60cfa8eff7d9452))
+
 ## [0.2.1](https://github.com/fransek/form/compare/v0.2.0...v0.2.1) (2026-03-17)
 
 
