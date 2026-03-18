@@ -31,10 +31,16 @@ const validateEmail: Validation<string>["onChange"] = (value) => {
     : "Enter a valid email address";
 };
 
-const validateMessage: Validation<string>["onChange"] = (value) =>
-  value.trim() && value.trim().length < 10
+const validateMessage: Validation<string>["onChange"] = (value) => {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  return trimmed.length < 10
     ? "Share a few more details (min. 10 characters)"
     : undefined;
+};
 
 export default function App() {
   const [formState, setFormState] =
