@@ -1,4 +1,4 @@
-import type { FieldState, Validation } from "@fransek/form";
+import type { FieldState, SyncValidator } from "@fransek/form";
 import { createFieldState, Field, Form } from "@fransek/form";
 import type { SubmitEvent } from "react";
 import { useState } from "react";
@@ -17,11 +17,11 @@ const createInitialState = (): ContactFormState => ({
 });
 
 const required =
-  (label: string): Validation<string>["onChange"] =>
+  (label: string): SyncValidator<string> =>
   (value) =>
     value.trim() ? undefined : `${label} is required`;
 
-const validateEmail: Validation<string>["onChange"] = (value) => {
+const validateEmail: SyncValidator<string> = (value) => {
   if (!value.trim()) {
     return "Email is required";
   }
@@ -31,7 +31,7 @@ const validateEmail: Validation<string>["onChange"] = (value) => {
     : "Enter a valid email address";
 };
 
-const validateMessage: Validation<string>["onChange"] = (value) => {
+const validateMessage: SyncValidator<string> = (value) => {
   const trimmed = value.trim();
   if (!trimmed) {
     return undefined;
@@ -75,6 +75,13 @@ export default function App() {
     setSubmittedValues(null);
   }
 
+  const nameHintId = "name-hint";
+  const nameErrorId = "name-error";
+  const emailHintId = "email-hint";
+  const emailErrorId = "email-error";
+  const messageHintId = "message-hint";
+  const messageErrorId = "message-error";
+
   return (
     <div className={styles.page}>
       <header className={styles.header}>
@@ -96,34 +103,43 @@ export default function App() {
           onChange={(name) => setFormState((prev) => ({ ...prev, name }))}
           validation={{ onChange: required("Name") }}
         >
-          {({ value, handleChange, handleBlur, ref, errorMessage }) => (
-            <label className={styles.field}>
-              <div className={styles.labelRow}>
-                <span className={styles.label}>Name</span>
-                <span className={styles.required}>Required</span>
-              </div>
-              <input
-                ref={ref}
-                value={value}
-                onChange={(event) => handleChange(event.target.value)}
-                onBlur={handleBlur}
-                placeholder="Jane Doe"
-                className={`${styles.input} ${
-                  errorMessage ? styles.inputError : ""
-                }`}
-                aria-invalid={Boolean(errorMessage)}
-              />
-              {errorMessage ? (
-                <span className={styles.error} role="alert">
-                  {errorMessage}
-                </span>
-              ) : (
-                <span className={styles.hint}>
-                  Keep it friendly—this is just a demo.
-                </span>
-              )}
-            </label>
-          )}
+          {({
+            value,
+            handleChange,
+            handleBlur,
+            ref,
+            errorMessage,
+            isValid,
+          }) => {
+            const describedBy = errorMessage ? nameErrorId : nameHintId;
+            return (
+              <label className={styles.field}>
+                <div className={styles.labelRow}>
+                  <span className={styles.label}>Name</span>
+                  <span className={styles.required}>Required</span>
+                </div>
+                <input
+                  ref={ref}
+                  value={value}
+                  onChange={(event) => handleChange(event.target.value)}
+                  onBlur={handleBlur}
+                  placeholder="Jane Doe"
+                  className={styles.input}
+                  aria-invalid={isValid === false}
+                  aria-describedby={describedBy}
+                />
+                {errorMessage ? (
+                  <span id={nameErrorId} className={styles.error}>
+                    {errorMessage}
+                  </span>
+                ) : (
+                  <span id={nameHintId} className={styles.hint}>
+                    Keep it friendly—this is just a demo.
+                  </span>
+                )}
+              </label>
+            );
+          }}
         </Field>
 
         <Field
@@ -131,35 +147,44 @@ export default function App() {
           onChange={(email) => setFormState((prev) => ({ ...prev, email }))}
           validation={{ onChange: validateEmail }}
         >
-          {({ value, handleChange, handleBlur, ref, errorMessage }) => (
-            <label className={styles.field}>
-              <div className={styles.labelRow}>
-                <span className={styles.label}>Email</span>
-                <span className={styles.required}>Required</span>
-              </div>
-              <input
-                ref={ref}
-                value={value}
-                inputMode="email"
-                onChange={(event) => handleChange(event.target.value)}
-                onBlur={handleBlur}
-                placeholder="you@example.com"
-                className={`${styles.input} ${
-                  errorMessage ? styles.inputError : ""
-                }`}
-                aria-invalid={Boolean(errorMessage)}
-              />
-              {errorMessage ? (
-                <span className={styles.error} role="alert">
-                  {errorMessage}
-                </span>
-              ) : (
-                <span className={styles.hint}>
-                  We&apos;ll only use this to confirm your submission.
-                </span>
-              )}
-            </label>
-          )}
+          {({
+            value,
+            handleChange,
+            handleBlur,
+            ref,
+            errorMessage,
+            isValid,
+          }) => {
+            const describedBy = errorMessage ? emailErrorId : emailHintId;
+            return (
+              <label className={styles.field}>
+                <div className={styles.labelRow}>
+                  <span className={styles.label}>Email</span>
+                  <span className={styles.required}>Required</span>
+                </div>
+                <input
+                  ref={ref}
+                  value={value}
+                  inputMode="email"
+                  onChange={(event) => handleChange(event.target.value)}
+                  onBlur={handleBlur}
+                  placeholder="you@example.com"
+                  className={styles.input}
+                  aria-invalid={isValid === false}
+                  aria-describedby={describedBy}
+                />
+                {errorMessage ? (
+                  <span id={emailErrorId} className={styles.error}>
+                    {errorMessage}
+                  </span>
+                ) : (
+                  <span id={emailHintId} className={styles.hint}>
+                    We&apos;ll only use this to confirm your submission.
+                  </span>
+                )}
+              </label>
+            );
+          }}
         </Field>
 
         <Field
@@ -168,35 +193,44 @@ export default function App() {
           validation={{ onChange: validateMessage }}
           validationMode="touchedOrDirty"
         >
-          {({ value, handleChange, handleBlur, ref, errorMessage }) => (
-            <label className={styles.field}>
-              <div className={styles.labelRow}>
-                <span className={styles.label}>Message</span>
-                <span className={styles.optional}>Optional</span>
-              </div>
-              <textarea
-                ref={ref}
-                value={value}
-                onChange={(event) => handleChange(event.target.value)}
-                onBlur={handleBlur}
-                rows={4}
-                placeholder="Tell us what you need..."
-                className={`${styles.textarea} ${
-                  errorMessage ? styles.inputError : ""
-                }`}
-                aria-invalid={Boolean(errorMessage)}
-              />
-              {errorMessage ? (
-                <span className={styles.error} role="alert">
-                  {errorMessage}
-                </span>
-              ) : (
-                <span className={styles.hint}>
-                  Validation runs when you touch or change this field.
-                </span>
-              )}
-            </label>
-          )}
+          {({
+            value,
+            handleChange,
+            handleBlur,
+            ref,
+            errorMessage,
+            isValid,
+          }) => {
+            const describedBy = errorMessage ? messageErrorId : messageHintId;
+            return (
+              <label className={styles.field}>
+                <div className={styles.labelRow}>
+                  <span className={styles.label}>Message</span>
+                  <span className={styles.optional}>Optional</span>
+                </div>
+                <textarea
+                  ref={ref}
+                  value={value}
+                  onChange={(event) => handleChange(event.target.value)}
+                  onBlur={handleBlur}
+                  rows={4}
+                  placeholder="Tell us what you need..."
+                  className={styles.textarea}
+                  aria-invalid={isValid === false}
+                  aria-describedby={describedBy}
+                />
+                {errorMessage ? (
+                  <span id={messageErrorId} className={styles.error}>
+                    {errorMessage}
+                  </span>
+                ) : (
+                  <span id={messageHintId} className={styles.hint}>
+                    Validation runs when you touch or change this field.
+                  </span>
+                )}
+              </label>
+            );
+          }}
         </Field>
 
         <div className={styles.actions}>

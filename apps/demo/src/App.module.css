@@ -117,7 +117,8 @@
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
-.inputError {
+.input[aria-invalid="true"],
+.textarea[aria-invalid="true"] {
   border-color: #dc2626;
   background: #fff5f5;
   box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.08);
