@@ -42,6 +42,16 @@ export function Field<T>(props: FieldProps<T>) {
 
   useEffect(() => {
     async function performValidation() {
+      if (
+        !validation?.onSubmit &&
+        !validation?.onSubmitAsync &&
+        !stateRef.current.isValidating &&
+        stateRef.current.isTouched &&
+        stateRef.current.isDirty &&
+        document.activeElement !== fieldRef.current
+      ) {
+        return stateRef.current.isValid;
+      }
       validationIdRef.current++;
       pendingValidationRef.current = validate(
         stateRef.current,
