@@ -308,6 +308,32 @@ describe("Field", () => {
         expectErrorMessage(input, "This value is invalid");
       });
     });
+
+    it("should not commit blur validation when a newer change occurs mid-validation", async () => {
+      const blurValidator = vi.fn(
+        asyncSpecificValueValidator("bad", "Blur error", 80),
+      );
+      const { user, input } = setupTest({
+        validateOnBlurAsync: blurValidator,
+        validateOnChangeAsync: async () => undefined,
+        debounceMs: 0,
+      });
+
+      await user.type(input, "bad");
+      await blurInput(input);
+
+      await waitFor(() => expectAttribute(input, "data-isvalidating", "true"));
+
+      input.focus();
+      await user.clear(input);
+      await user.type(input, "good");
+
+      await waitFor(() => expectAttribute(input, "data-isvalidating", "false"));
+
+      expect((input as HTMLInputElement).value).toBe("good");
+      expectErrorMessage(input, null);
+      expect(blurValidator).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe("combined sync and async validation", () => {
@@ -327,6 +353,29 @@ describe("Field", () => {
 
       await waitFor(() => expectAttribute(input, "data-isdirty", "true"));
       await waitFor(() => expectAttribute(input, "data-isvalidating", "false"));
+    });
+
+    it("should prefer blur async error when both blur and change async validations fail", async () => {
+      const changeValidator = vi.fn(
+        asyncSpecificValueValidator("conflict", "Change async error", 10),
+      );
+      const blurValidator = vi.fn(
+        asyncSpecificValueValidator("conflict", "Blur async error", 20),
+      );
+      const { user, input } = setupTest({
+        validateOnChangeAsync: changeValidator,
+        validateOnBlurAsync: blurValidator,
+        debounceMs: 0,
+      });
+
+      await user.type(input, "conflict");
+      await blurInput(input);
+
+      await waitFor(() => expectAttribute(input, "data-isvalidating", "false"));
+
+      expect(blurValidator).toHaveBeenCalled();
+      expect(changeValidator).toHaveBeenCalled();
+      expectErrorMessage(input, "Blur async error");
     });
   });
 
@@ -427,6 +476,35 @@ describe("Field", () => {
       });
 
       await waitFor(() => expectAttribute(input, "data-isvalidating", "false"));
+    });
+
+    it("should ignore stale async results when value changes during validation", async () => {
+      const asyncValidator = vi.fn(async (value: string) => {
+        await new Promise((resolve) =>
+          setTimeout(resolve, value === "bad" ? 80 : 10),
+        );
+        return value === "bad" ? "Bad value" : undefined;
+      });
+      const { user, input } = setupTest({
+        validateOnChangeAsync: asyncValidator,
+        debounceMs: 0,
+        validationMode: "dirty",
+      });
+
+      await user.type(input, "bad");
+
+      await waitFor(() => expectAttribute(input, "data-isvalidating", "true"));
+
+      await user.clear(input);
+      await user.type(input, "good");
+
+      await waitFor(() => expectAttribute(input, "data-isvalidating", "false"));
+
+      expect(asyncValidator).toHaveBeenCalledWith("bad");
+      expect(asyncValidator).toHaveBeenCalledWith("good");
+      expectErrorMessage(input, null);
+      expectAttribute(input, "data-isvalid", "true");
+      expect((input as HTMLInputElement).value).toBe("good");
     });
   });
 });
