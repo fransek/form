@@ -1,0 +1,118 @@
+.main {
+  align-items: center;
+  background: #11151d;
+  color: #f8fafc;
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.form {
+  border: 1px solid #1e293b;
+  border-radius: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-inline: 1rem;
+  max-width: 32rem;
+  padding: 2rem;
+  width: 100%;
+}
+
+.heading {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.input {
+  background: #1e293b;
+  border: none;
+  border-radius: 0.375rem;
+  color: #f8fafc;
+  font-family: inherit;
+  font-size: 1rem;
+  padding: 0.75rem 1rem;
+  &[aria-invalid="true"]:not(:focus) {
+    outline: 1px solid #f87171;
+  }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.fieldset {
+  border: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0;
+}
+
+.label {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.radioLabel,
+.checkboxLabel {
+  align-items: center;
+  display: flex;
+  gap: 0.25rem;
+}
+
+.error {
+  color: #f87171;
+  font-size: 0.875rem;
+}
+
+.validating {
+  color: #c0c0c0;
+  font-size: 0.875rem;
+}
+
+.srOnly {
+  border: 0;
+  clip: rect(0 0 0 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  width: 1px;
+}
+
+.submitButton {
+  background: #2563eb;
+  border: none;
+  border-radius: 0.375rem;
+  color: #f8fafc;
+  font-family: inherit;
+  font-size: 1rem;
+  padding: 0.75rem 1rem;
+}
+
+.resetButton {
+  background: #1e293b;
+  border: none;
+  border-radius: 0.375rem;
+  color: #f8fafc;
+  font-family: inherit;
+  font-size: 1rem;
+  padding: 0.75rem 1rem;
+}
+
+.buttonRow {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+}
+
+.checkboxes,
+.radioButtons {
+  display: flex;
+  gap: 1rem;
+}
