@@ -1,5 +1,10 @@
 import React, { useCallback, useRef } from "react";
-import { FieldMap, FormContextValue, ValidationMode } from "./types";
+import {
+  FieldMap,
+  FormContextValue,
+  ValidateFormOptions,
+  ValidationMode,
+} from "./types";
 
 /** Props for the {@link Form} component. */
 interface FormProps extends Omit<React.ComponentProps<"form">, "onSubmit"> {
@@ -54,20 +59,29 @@ export function Form({
     fieldsRef.current.delete(id);
   }, []);
 
-  const validateForm = useCallback(async () => {
-    const fields = Array.from(fieldsRef.current.values());
-    const validationPromises = fields.map(async (field) => ({
-      isValid: await field.validate(),
-      ref: field.ref,
-    }));
-    const results = await Promise.all(validationPromises);
-    fields.forEach((field) => field.commitPendingValidation());
-    const hasErrors = results.some((result) => !result.isValid);
-    if (hasErrors) {
-      focusFirstError(results);
-    }
-    return !hasErrors;
-  }, []);
+  const validateForm = useCallback(
+    async (options: ValidateFormOptions = {}) => {
+      const {
+        focusFirstError: shouldFocusFirstError = true,
+        scrollOffset = 100,
+      } = options;
+
+      const fields = Array.from(fieldsRef.current.values());
+      const validationPromises = fields.map(async (field) => ({
+        isValid: await field.validate(),
+        ref: field.ref,
+      }));
+      const results = await Promise.all(validationPromises);
+      fields.forEach((field) => field.commitPendingValidation());
+      const hasErrors = results.some((result) => !result.isValid);
+
+      if (hasErrors && shouldFocusFirstError) {
+        focusFirstError(results, scrollOffset);
+      }
+      return !hasErrors;
+    },
+    [],
+  );
 
   return (
     <FormContext.Provider
@@ -97,6 +111,7 @@ export function focusFirstError(
     isValid: boolean;
     ref: HTMLElement | null;
   }[],
+  scrollOffset: number,
 ) {
   const firstInvalidField = results
     .filter((field) => !field.isValid && field.ref)
@@ -113,6 +128,6 @@ export function focusFirstError(
   firstInvalidField.focus();
   const rect = firstInvalidField.getBoundingClientRect();
   window.scrollTo({
-    top: rect.top + window.scrollY - 100,
+    top: rect.top + window.scrollY - scrollOffset,
   });
 }

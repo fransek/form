@@ -105,3 +105,10 @@ export type FieldMap = Map<
     commitPendingValidation: () => void;
   }
 >;
+
+export interface ValidateFormOptions {
+  /** If `true`, the first invalid field will be focused after validation. Defaults to `true`. */
+  focusFirstError?: boolean;
+  /** Additional offset in pixels to apply when scrolling to the first error. Defaults to `100`. */
+  scrollOffset?: number;
+}
