@@ -76,7 +76,7 @@ describe("Field", () => {
       const validator = vi.fn(minLengthValidator(3));
       const { user, input } = setupTest({
         validationMode: "touched",
-        validateOnChange: validator,
+        validation: { onChange: validator },
       });
 
       await user.type(input, "a");
@@ -91,7 +91,7 @@ describe("Field", () => {
       const validator = vi.fn(minLengthValidator(3));
       const { user, input } = setupTest({
         validationMode: "touchedOrDirty",
-        validateOnChange: validator,
+        validation: { onChange: validator },
       });
 
       await user.type(input, "a");
@@ -122,7 +122,7 @@ describe("Field", () => {
       const validator = vi.fn(minLengthValidator(3));
       const { user, input } = setupTest({
         validationMode: "touchedOrDirty",
-        validateOnChange: validator,
+        validation: { onChange: validator },
       });
 
       input.focus();
@@ -140,7 +140,9 @@ describe("Field", () => {
   describe("sync validation on change", () => {
     it("should validate on change with validateOnChange", async () => {
       const validator = vi.fn(minLengthValidator(3));
-      const { user, input } = setupTest({ validateOnChange: validator });
+      const { user, input } = setupTest({
+        validation: { onChange: validator },
+      });
 
       await user.type(input, "ab");
       await blurInput(input);
@@ -159,7 +161,9 @@ describe("Field", () => {
 
     it("should not validate on change if field is not dirty", async () => {
       const validator = vi.fn(minLengthValidator(3));
-      const { user, input } = setupTest({ validateOnChange: validator });
+      const { user, input } = setupTest({
+        validation: { onChange: validator },
+      });
 
       await user.type(input, "ab");
       expectErrorMessage(input, null);
@@ -167,7 +171,9 @@ describe("Field", () => {
 
     it("should keep isTouched false when validation fails on change", async () => {
       const validator = vi.fn(minLengthValidator(3));
-      const { user, input } = setupTest({ validateOnChange: validator });
+      const { user, input } = setupTest({
+        validation: { onChange: validator },
+      });
 
       await user.type(input, "ab");
       expectAttribute(input, "data-istouched", "false");
@@ -177,7 +183,7 @@ describe("Field", () => {
   describe("sync validation on blur", () => {
     it("should validate on blur with validateOnBlur", async () => {
       const validator = vi.fn(minLengthValidator(3));
-      const { user, input } = setupTest({ validateOnBlur: validator });
+      const { user, input } = setupTest({ validation: { onBlur: validator } });
 
       await user.type(input, "ab");
       await blurInput(input);
@@ -191,7 +197,9 @@ describe("Field", () => {
 
     it("should validate on change if field is dirty and blur is called", async () => {
       const validator = vi.fn(minLengthValidator(3));
-      const { user, input } = setupTest({ validateOnChange: validator });
+      const { user, input } = setupTest({
+        validation: { onChange: validator },
+      });
 
       await user.type(input, "ab");
       await blurInput(input);
@@ -209,7 +217,7 @@ describe("Field", () => {
         asyncSpecificValueValidator("invalid", "This value is invalid", 100),
       );
       const { user, input } = setupTest({
-        validateOnChangeAsync: asyncValidator,
+        validation: { onChangeAsync: asyncValidator },
         debounceMs: 50,
       });
 
@@ -232,7 +240,7 @@ describe("Field", () => {
     it("should debounce async validation", async () => {
       const asyncValidator = vi.fn(asyncMinLengthValidator(3, 50));
       const { user, input } = setupTest({
-        validateOnChangeAsync: asyncValidator,
+        validation: { onChangeAsync: asyncValidator },
         debounceMs: 100,
       });
 
@@ -253,7 +261,7 @@ describe("Field", () => {
         asyncSpecificValueValidator("invalid", "Invalid", 200),
       );
       const { user, input } = setupTest({
-        validateOnChangeAsync: asyncValidator,
+        validation: { onChangeAsync: asyncValidator },
         debounceMs: 50,
       });
 
@@ -275,8 +283,10 @@ describe("Field", () => {
         },
       );
       const { user, input } = setupTest({
-        validateOnChange: syncValidator,
-        validateOnChangeAsync: asyncValidator,
+        validation: {
+          onChange: syncValidator,
+          onChangeAsync: asyncValidator,
+        },
         debounceMs: 50,
       });
 
@@ -294,7 +304,7 @@ describe("Field", () => {
         asyncSpecificValueValidator("invalid", "This value is invalid", 50),
       );
       const { user, input } = setupTest({
-        validateOnBlurAsync: asyncValidator,
+        validation: { onBlurAsync: asyncValidator },
       });
 
       await user.type(input, "invalid");
@@ -314,8 +324,10 @@ describe("Field", () => {
         asyncSpecificValueValidator("bad", "Blur error", 80),
       );
       const { user, input } = setupTest({
-        validateOnBlurAsync: blurValidator,
-        validateOnChangeAsync: async () => undefined,
+        validation: {
+          onBlurAsync: blurValidator,
+          onChangeAsync: async () => undefined,
+        },
         debounceMs: 0,
       });
 
@@ -343,8 +355,10 @@ describe("Field", () => {
         asyncSpecificValueValidator("taken", "This value is taken", 50),
       );
       const { user, input } = setupTest({
-        validateOnChange: syncValidator,
-        validateOnChangeAsync: asyncValidator,
+        validation: {
+          onChange: syncValidator,
+          onChangeAsync: asyncValidator,
+        },
         debounceMs: 50,
       });
 
@@ -363,8 +377,10 @@ describe("Field", () => {
         asyncSpecificValueValidator("conflict", "Blur async error", 20),
       );
       const { user, input } = setupTest({
-        validateOnChangeAsync: changeValidator,
-        validateOnBlurAsync: blurValidator,
+        validation: {
+          onChangeAsync: changeValidator,
+          onBlurAsync: blurValidator,
+        },
         debounceMs: 0,
       });
 
@@ -382,7 +398,9 @@ describe("Field", () => {
   describe("error message handling", () => {
     it("should clear error message when validation passes", async () => {
       const validator = vi.fn(minLengthValidator(3));
-      const { user, input } = setupTest({ validateOnChange: validator });
+      const { user, input } = setupTest({
+        validation: { onChange: validator },
+      });
 
       await user.type(input, "ab");
       await blurInput(input);
@@ -401,8 +419,10 @@ describe("Field", () => {
         specificValueValidator("blur", "Blur: Invalid"),
       );
       const { user, input } = setupTest({
-        validateOnChange: changeValidator,
-        validateOnBlur: blurValidator,
+        validation: {
+          onChange: changeValidator,
+          onBlur: blurValidator,
+        },
       });
 
       await user.type(input, "blur");
@@ -415,7 +435,9 @@ describe("Field", () => {
   describe("state flags", () => {
     it("should track isValid correctly", async () => {
       const validator = vi.fn(minLengthValidator(3));
-      const { user, input } = setupTest({ validateOnChange: validator });
+      const { user, input } = setupTest({
+        validation: { onChange: validator },
+      });
 
       expectAttribute(input, "data-isvalid", "true");
 
@@ -461,7 +483,7 @@ describe("Field", () => {
         },
       );
       const { user, input } = setupTest({
-        validateOnChangeAsync: asyncValidator,
+        validation: { onChangeAsync: asyncValidator },
         debounceMs: 50,
       });
 
@@ -486,7 +508,7 @@ describe("Field", () => {
         return value === "bad" ? "Bad value" : undefined;
       });
       const { user, input } = setupTest({
-        validateOnChangeAsync: asyncValidator,
+        validation: { onChangeAsync: asyncValidator },
         debounceMs: 0,
         validationMode: "dirty",
       });
