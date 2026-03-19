@@ -219,6 +219,7 @@ export function Field<T>(props: FieldProps<T>) {
       onChange({
         ...stateRef.current,
         isTouched: true,
+        isValidating: isValidatingOnChangeRef.current,
       });
       return;
     }

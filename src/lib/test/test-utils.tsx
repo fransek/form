@@ -3,45 +3,42 @@ import userEvent from "@testing-library/user-event";
 import React, { useState } from "react";
 import { Field } from "../Field";
 import { createFieldState } from "../fieldState";
-import { ValidationMode } from "../types";
+import { Validation, ValidationMode } from "../types";
 
 interface FormState {
   field: ReturnType<typeof createFieldState<string>>;
 }
 
 interface InputProps {
-  validateOnChange?: (value: string) => React.ReactNode;
-  validateOnChangeAsync?: (value: string) => Promise<React.ReactNode>;
-  validateOnBlur?: (value: string) => React.ReactNode;
-  validateOnBlurAsync?: (value: string) => Promise<React.ReactNode>;
+  validation?: Validation<string>;
   debounceMs?: number;
   validationMode?: ValidationMode;
+  onInput?: (value: string) => void;
+  onBlur?: () => void;
+  initialValue?: string;
 }
 
 const Input = ({
-  validateOnChange,
-  validateOnChangeAsync,
-  validateOnBlur,
-  validateOnBlurAsync,
+  validation,
   debounceMs,
   validationMode,
+  onInput,
+  onBlur,
+  initialValue = "",
 }: InputProps = {}) => {
   const [form, setForm] = useState<FormState>({
-    field: createFieldState(""),
+    field: createFieldState(initialValue),
   });
 
   return (
     <Field<string>
       state={form.field}
       onChange={(field) => setForm({ field })}
-      validation={{
-        onChange: validateOnChange,
-        onChangeAsync: validateOnChangeAsync,
-        onBlur: validateOnBlur,
-        onBlurAsync: validateOnBlurAsync,
-      }}
+      validation={validation}
       validationMode={validationMode}
       debounceMs={debounceMs}
+      onInput={onInput}
+      onBlur={onBlur}
     >
       {({
         isValid,
