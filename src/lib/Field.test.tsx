@@ -1,5 +1,10 @@
-import { cleanup, waitFor } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import React, { useState } from "react";
 import { vi } from "vitest";
+import { Field } from "./Field";
+import { FormContext } from "./Form";
+import { createFieldState } from "./fieldState";
 import {
   asyncMinLengthValidator,
   asyncSpecificValueValidator,
@@ -11,6 +16,7 @@ import {
   setupTest,
   specificValueValidator,
 } from "./test/test-utils";
+import { Validation } from "./types";
 
 describe("Field", () => {
   afterEach(() => {
@@ -527,6 +533,112 @@ describe("Field", () => {
       expectErrorMessage(input, null);
       expectAttribute(input, "data-isvalid", "true");
       expect((input as HTMLInputElement).value).toBe("good");
+    });
+  });
+
+  describe("form registration", () => {
+    const renderWithFormContext = (validation?: Validation<string>) => {
+      const registrations: {
+        validate?: () => Promise<boolean>;
+        commitPendingValidation?: () => void;
+      } = {};
+      const onChangeSpy = vi.fn();
+      const TestField = () => {
+        const [field, setField] = useState(createFieldState(""));
+        return (
+          <FormContext.Provider
+            value={{
+              registerField: (_id, _ref, validate, commitPendingValidation) => {
+                registrations.validate = validate;
+                registrations.commitPendingValidation = commitPendingValidation;
+              },
+              unregisterField: () => {
+                registrations.validate = undefined;
+                registrations.commitPendingValidation = undefined;
+              },
+              validationMode: "touchedAndDirty",
+              debounceMs: 0,
+            }}
+          >
+            <Field<string>
+              state={field}
+              onChange={(next) => {
+                onChangeSpy(next);
+                setField(next);
+              }}
+              validation={validation}
+              debounceMs={0}
+            >
+              {({ handleChange, handleBlur, ref, value }) => (
+                <input
+                  data-testid="input"
+                  ref={ref}
+                  value={String(value)}
+                  onChange={(e) => handleChange(e.target.value as string)}
+                  onBlur={handleBlur}
+                />
+              )}
+            </Field>
+          </FormContext.Provider>
+        );
+      };
+
+      const user = userEvent.setup();
+      render(<TestField />);
+      const input = screen.getByTestId("input") as HTMLInputElement;
+
+      return { input, user, registrations, onChangeSpy };
+    };
+
+    it("should skip validation when touched and dirty without submit validators", async () => {
+      const { input, user, registrations, onChangeSpy } =
+        renderWithFormContext();
+
+      await user.type(input, "abc");
+      await user.tab();
+
+      onChangeSpy.mockClear();
+
+      let validationResult: boolean | undefined;
+      await act(async () => {
+        validationResult = await registrations.validate!();
+      });
+
+      expect(validationResult).toBe(true);
+      expect(onChangeSpy).not.toHaveBeenCalled();
+    });
+
+    it("should run submit validation and commit pending result", async () => {
+      const asyncSubmit = vi.fn(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        return "Submit async error";
+      });
+      const { input, user, registrations, onChangeSpy } = renderWithFormContext(
+        {
+          onSubmit: () => undefined,
+          onSubmitAsync: asyncSubmit,
+        },
+      );
+
+      await user.type(input, "abc");
+      await user.tab();
+
+      const callsBeforeValidate = onChangeSpy.mock.calls.length;
+
+      let isValid: boolean | undefined;
+      await act(async () => {
+        isValid = await registrations.validate!();
+      });
+      expect(isValid).toBe(false);
+      expect(asyncSubmit).toHaveBeenCalledWith("abc");
+
+      await act(async () => registrations.commitPendingValidation?.());
+
+      expect(onChangeSpy.mock.calls.length).toBe(callsBeforeValidate + 1);
+      const committedState =
+        onChangeSpy.mock.calls[onChangeSpy.mock.calls.length - 1][0];
+      expect(committedState.errorMessage).toBe("Submit async error");
+      expect(committedState.isValid).toBe(false);
     });
   });
 });
