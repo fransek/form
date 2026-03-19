@@ -117,6 +117,18 @@ describe("Field", () => {
       expectAttribute(input, "data-isdirty", "false");
     });
 
+    it("should mark field as touched even when no blur validation runs", async () => {
+      const { user, input } = setupTest();
+
+      input.focus();
+      await user.tab();
+
+      await waitFor(() => {
+        expectAttribute(input, "data-istouched", "true");
+        expectAttribute(input, "data-isdirty", "false");
+      });
+    });
+
     it("should set isDirty to true on blur after touch", async () => {
       const { user, input } = setupTest();
       await user.type(input, "test");
