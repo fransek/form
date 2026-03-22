@@ -4,6 +4,18 @@
 
 [1]: https://www.npmjs.com/package/@fransek/ui?activeTab=versions
 
+## [0.4.0](https://github.com/fransek/form/compare/v0.3.0...v0.4.0) (2026-03-22)
+
+
+### Features
+
+* updated `validate` and `validateAsync` API ([9bcf387](https://github.com/fransek/form/commit/9bcf38721a9b8232a1b6bcec59f66dc54ab52de8))
+
+
+### Bug Fixes
+
+* fixed minor blur handler validation bug ([#18](https://github.com/fransek/form/issues/18)) ([eae057f](https://github.com/fransek/form/commit/eae057fbd2d797040b62b92e4cc38c7ddd342b7d))
+
 ## [0.3.0](https://github.com/fransek/form/compare/v0.2.1...v0.3.0) (2026-03-18)
 
 
