@@ -2,7 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React, { useEffect, useRef } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Form, useFormContext } from "./Form";
+import { Form, useFormContext } from "./form";
 
 interface RegisteredFieldProps {
   id: string;

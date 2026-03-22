@@ -1,8 +1,8 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React, { useState } from "react";
-import { Field } from "../Field";
-import { createFieldState } from "../fieldState";
+import { Field } from "../field";
+import { createFieldState } from "../state-utils";
 import { Validation, ValidationMode } from "../types";
 
 interface FormState {

@@ -2,9 +2,9 @@ import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React, { useState } from "react";
 import { vi } from "vitest";
-import { Field } from "./Field";
-import { FormContext } from "./Form";
-import { createFieldState } from "./fieldState";
+import { Field } from "./field";
+import { FormContext } from "./form";
+import { createFieldState } from "./state-utils";
 import {
   asyncMinLengthValidator,
   asyncSpecificValueValidator,
