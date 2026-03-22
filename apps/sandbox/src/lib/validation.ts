@@ -1,3 +1,7 @@
+import { isMatch } from "date-fns";
+
+export const dateFormat = "MM/dd/yyyy";
+
 export function validateSummary(value: string) {
   if (!value) {
     return "Summary is required";
@@ -7,7 +11,7 @@ export function validateSummary(value: string) {
 export async function validateSummaryAsync(value: string) {
   await new Promise((resolve) => setTimeout(resolve, 300));
   if (value.toLowerCase().includes("duplicate")) {
-    return "Summary must be unique";
+    return "A task with this summary already exists";
   }
 }
 
@@ -23,16 +27,34 @@ export function validatePriority(value: string | null) {
   }
 }
 
-export function validateStartDate(value: string, dueDate: string) {
-  if (dueDate && new Date(value) > new Date(dueDate)) {
-    return "Start date cannot be after due date";
-  }
+export function validateStartDate(dueDate: string) {
+  return (value: string) => {
+    if (value && !isMatch(value, dateFormat)) {
+      return `Must match format ${dateFormat}`;
+    }
+    if (
+      dueDate &&
+      isMatch(dueDate, dateFormat) &&
+      new Date(value) > new Date(dueDate)
+    ) {
+      return "Start date cannot be after due date";
+    }
+  };
 }
 
-export function validateDueDate(value: string, startDate: string) {
-  if (startDate && new Date(value) < new Date(startDate)) {
-    return "Due date cannot be before start date";
-  }
+export function validateDueDate(startDate: string) {
+  return (value: string) => {
+    if (value && !isMatch(value, dateFormat)) {
+      return `Must match format ${dateFormat}`;
+    }
+    if (
+      startDate &&
+      isMatch(startDate, dateFormat) &&
+      new Date(value) < new Date(startDate)
+    ) {
+      return "Due date cannot be before start date";
+    }
+  };
 }
 
 export function validateAssignee(value: string[]) {
