@@ -10,7 +10,13 @@ import {
   validateSummaryAsync,
   validateType,
 } from "@/lib/validation";
-import { createFieldState, Field, FieldState, Form } from "@fransek/form";
+import {
+  createFieldState,
+  Field,
+  FieldState,
+  Form,
+  validateIfDirty,
+} from "@fransek/form";
 import {
   Checkbox,
   CheckboxGroup,
@@ -84,6 +90,7 @@ export function FormExample() {
             value={props.value}
             ref={props.ref}
             isValidating={props.isValidating}
+            isValidatingMessage="Checking availability..."
           />
         )}
       </Field>
@@ -166,16 +173,14 @@ export function FormExample() {
             setFormData((prev) => ({
               ...prev,
               startDate,
-              dueDate: {
-                ...prev.dueDate,
-                isValid: true,
-                errorMessage: undefined,
-              },
+              dueDate: validateIfDirty(
+                prev.dueDate,
+                validateDueDate(startDate.value),
+              ),
             }))
           }
           validation={{
-            onChange: (value) =>
-              validateStartDate(value, formData.dueDate.value),
+            onChange: validateStartDate(formData.dueDate.value),
           }}
         >
           {(props) => (
@@ -200,16 +205,14 @@ export function FormExample() {
             setFormData((prev) => ({
               ...prev,
               dueDate,
-              startDate: {
-                ...prev.startDate,
-                isValid: true,
-                errorMessage: undefined,
-              },
+              startDate: validateIfDirty(
+                prev.startDate,
+                validateStartDate(dueDate.value),
+              ),
             }))
           }
           validation={{
-            onChange: (value) =>
-              validateDueDate(value, formData.startDate.value),
+            onChange: validateDueDate(formData.startDate.value),
           }}
         >
           {(props) => (

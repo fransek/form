@@ -40,6 +40,34 @@ export function Field<T>(props: FieldProps<T>) {
   const fieldRef = useRef<HTMLElement | null>(null);
   const id = useId();
 
+  const clearValidationTimeout = () => {
+    if (!validationTimeoutRef.current) {
+      return;
+    }
+    clearTimeout(validationTimeoutRef.current);
+    validationTimeoutRef.current = null;
+  };
+
+  const updateState = (overrides: Partial<FieldState<T>>) => {
+    onChange({ ...stateRef.current, ...overrides });
+  };
+
+  const shouldValidateOnChange = () =>
+    validationMode === "dirty" ||
+    validationMode === "touchedOrDirty" ||
+    stateRef.current.isTouched;
+
+  const shouldValidateOnBlur = () =>
+    validationMode === "touched" ||
+    validationMode === "touchedOrDirty" ||
+    stateRef.current.isDirty;
+
+  const shouldValidateChangeOnBlur = () =>
+    !stateRef.current.isTouched &&
+    (validationMode === "touched" ||
+      (validationMode === "touchedOrDirty" && !stateRef.current.isDirty) ||
+      (validationMode === "touchedAndDirty" && stateRef.current.isDirty));
+
   useEffect(() => {
     async function performValidation() {
       if (
@@ -101,24 +129,18 @@ export function Field<T>(props: FieldProps<T>) {
     onInput?.(value);
 
     if (validationTimeoutRef.current) {
-      clearTimeout(validationTimeoutRef.current);
+      clearValidationTimeout();
     }
 
     const currentValidation = ++validationIdRef.current;
 
-    const shouldValidate =
-      validationMode === "dirty" ||
-      validationMode === "touchedOrDirty" ||
-      stateRef.current.isTouched;
-
-    if (shouldValidate) {
+    if (shouldValidateOnChange()) {
       const errorMessage = validation?.onChange?.(value);
       const willValidateAsync = Boolean(
         validation?.onChangeAsync && !errorMessage,
       );
 
-      onChange({
-        ...stateRef.current,
+      updateState({
         value,
         errorMessage,
         isDirty: true,
@@ -133,8 +155,7 @@ export function Field<T>(props: FieldProps<T>) {
 
           isValidatingOnChangeRef.current = false;
           if (currentValidation === validationIdRef.current) {
-            onChange({
-              ...stateRef.current,
+            updateState({
               errorMessage: asyncErrorMessage,
               isValid: !asyncErrorMessage,
               isValidating: isValidatingOnBlurRef.current,
@@ -143,8 +164,7 @@ export function Field<T>(props: FieldProps<T>) {
         }, debounceMs);
       }
     } else {
-      onChange({
-        ...stateRef.current,
+      updateState({
         value,
         isDirty: true,
         isValidating: false,
@@ -155,16 +175,8 @@ export function Field<T>(props: FieldProps<T>) {
   async function handleBlur() {
     onBlur?.();
 
-    const shouldValidateOnBlur =
-      validationMode === "touched" ||
-      validationMode === "touchedOrDirty" ||
-      stateRef.current.isDirty;
-
-    if (!shouldValidateOnBlur) {
-      onChange({
-        ...stateRef.current,
-        isTouched: true,
-      });
+    if (!shouldValidateOnBlur()) {
+      updateState({ isTouched: true });
       return;
     }
 
@@ -174,13 +186,7 @@ export function Field<T>(props: FieldProps<T>) {
       stateRef.current.errorMessage ||
       validation?.onBlur?.(stateRef.current.value);
 
-    const shouldValidateOnChange =
-      !stateRef.current.isTouched &&
-      (validationMode === "touched" ||
-        (validationMode === "touchedOrDirty" && !stateRef.current.isDirty) ||
-        (validationMode === "touchedAndDirty" && stateRef.current.isDirty));
-
-    if (!errorMessage && shouldValidateOnChange && validation?.onChange) {
+    if (!errorMessage && shouldValidateChangeOnBlur() && validation?.onChange) {
       errorMessage = validation.onChange(stateRef.current.value);
     }
 
@@ -189,11 +195,7 @@ export function Field<T>(props: FieldProps<T>) {
       (validation?.onBlurAsync || validation?.onChangeAsync)
     ) {
       isValidatingOnBlurRef.current = true;
-      onChange({
-        ...stateRef.current,
-        isValidating: true,
-        isTouched: true,
-      });
+      updateState({ isValidating: true, isTouched: true });
 
       const asyncValidations: Promise<React.ReactNode>[] = [];
 
@@ -201,7 +203,7 @@ export function Field<T>(props: FieldProps<T>) {
         asyncValidations.push(validation.onBlurAsync(stateRef.current.value));
       }
 
-      if (shouldValidateOnChange && validation?.onChangeAsync) {
+      if (shouldValidateChangeOnBlur() && validation?.onChangeAsync) {
         asyncValidations.push(validation.onChangeAsync(stateRef.current.value));
       }
 
@@ -212,20 +214,18 @@ export function Field<T>(props: FieldProps<T>) {
     isValidatingOnBlurRef.current = false;
 
     if (errorMessage && validationTimeoutRef.current) {
-      clearTimeout(validationTimeoutRef.current);
+      clearValidationTimeout();
     }
 
     if (currentValidation !== validationIdRef.current) {
-      onChange({
-        ...stateRef.current,
+      updateState({
         isTouched: true,
         isValidating: isValidatingOnChangeRef.current,
       });
       return;
     }
 
-    onChange({
-      ...stateRef.current,
+    updateState({
       errorMessage,
       isTouched: true,
       isValid: !errorMessage,
