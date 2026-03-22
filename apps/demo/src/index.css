@@ -1,8 +1,16 @@
 @import url("https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap");
 
 :root {
-  background-color: #f8fafc;
-  color: #0f172a;
+  --background-color: oklch(20% 0.017 264);
+  --text-color: oklch(98% 0 0);
+  --primary-color: oklch(50% 0.22 264);
+  --secondary-color: oklch(28% 0.035 264);
+  --error-color: oklch(71% 0.18 22);
+  --muted-text-color: oklch(80% 0 0);
+  --border-color: oklch(37% 0.04 264);
+
+  background-color: var(--background-color);
+  color: var(--text-color);
   font-family:
     "Noto Sans",
     system-ui,
@@ -29,8 +37,4 @@ body {
 
 #root {
   min-height: 100vh;
-}
-
-a {
-  color: inherit;
 }
