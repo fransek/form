@@ -81,19 +81,17 @@ export function Field<T>(props: FieldProps<T>) {
         return stateRef.current.isValid;
       }
       validationIdRef.current++;
-      pendingValidationRef.current = validate(
-        stateRef.current,
+      pendingValidationRef.current = validate(stateRef.current, [
         validation?.onChange,
         validation?.onBlur,
         validation?.onSubmit,
-      );
+      ]);
       if (pendingValidationRef.current.isValid) {
-        pendingValidationRef.current = await validateAsync(
-          stateRef.current,
+        pendingValidationRef.current = await validateAsync(stateRef.current, [
           validation?.onChangeAsync,
           validation?.onBlurAsync,
           validation?.onSubmitAsync,
-        );
+        ]);
       }
       return pendingValidationRef.current.isValid;
     }

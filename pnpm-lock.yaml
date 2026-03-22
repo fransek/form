@@ -172,8 +172,8 @@ importers:
         specifier: ^1.3.0
         version: 1.3.0(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@fransek/ui':
-        specifier: ^0.8.2
-        version: 0.8.2(@base-ui/react@1.3.0(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(clsx@2.1.1)(date-fns@4.1.0)(lucide-react@0.577.0(react@19.2.4))(react-day-picker@9.14.0(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(tailwind-merge@3.5.0)(tailwindcss@4.2.2)
+        specifier: ^0.8.3
+        version: 0.8.3(@base-ui/react@1.3.0(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(clsx@2.1.1)(date-fns@4.1.0)(lucide-react@0.577.0(react@19.2.4))(react-day-picker@9.14.0(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(tailwind-merge@3.5.0)(tailwindcss@4.2.2)
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -777,8 +777,8 @@ packages:
   '@fransek/form@0.2.1':
     resolution: {integrity: sha512-htwduHphIOKsLn1nJWP7DO6hWtXzOIsrcU/C01CZjxVSiBaW25xINBj/cAKYpixJRYZAt1mjT0vcg3LLNoWaYg==}
 
-  '@fransek/ui@0.8.2':
-    resolution: {integrity: sha512-4FJXHst72cd8J2Ko6WxFPSzmbWakPWz+afpfr8YUi3HDNf9r/MNOaQfQ0LAxhE91zYVgZ0VgVHV7gOTdNPGvwg==}
+  '@fransek/ui@0.8.3':
+    resolution: {integrity: sha512-CD+I9ke455R7EBkdrxQagO0wHb/7pESTx3haD+4kjFwWONV1ra8dITzXmJ9Ar5M+bnResj8RSYCIQPgMq5q2oA==}
     peerDependencies:
       '@base-ui/react': ^1.2.0
       clsx: ^2.0.0
@@ -6174,7 +6174,7 @@ snapshots:
 
   '@fransek/form@0.2.1': {}
 
-  '@fransek/ui@0.8.2(@base-ui/react@1.3.0(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(clsx@2.1.1)(date-fns@4.1.0)(lucide-react@0.577.0(react@19.2.4))(react-day-picker@9.14.0(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(tailwind-merge@3.5.0)(tailwindcss@4.2.2)':
+  '@fransek/ui@0.8.3(@base-ui/react@1.3.0(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(clsx@2.1.1)(date-fns@4.1.0)(lucide-react@0.577.0(react@19.2.4))(react-day-picker@9.14.0(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(tailwind-merge@3.5.0)(tailwindcss@4.2.2)':
     dependencies:
       '@base-ui/react': 1.3.0(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       clsx: 2.1.1

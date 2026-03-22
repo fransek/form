@@ -1,6 +1,6 @@
-import { FieldState, SyncValidator, Validator } from "./types";
+import { FieldState, SyncValidator, ValidationMode, Validator } from "./types";
 
-/** Creates the initial state for a field with the given initial value. */
+/** Creates the initial state for a field with the provided value. */
 export function createFieldState<T>(initialValue: T): FieldState<T> {
   return {
     value: initialValue,
@@ -13,14 +13,27 @@ export function createFieldState<T>(initialValue: T): FieldState<T> {
 }
 
 /**
- * Runs the provided synchronous validators against the current field value and returns an updated {@link FieldState}.
- * Sets `isDirty` and `isTouched` to `true`. Stops at the first failing validator.
+ * Validates the field with synchronous validators and returns the next {@link FieldState}.
+ *
+ * If `validationMode` blocks validation, the original state is returned unchanged.
+ * When validation runs, `isDirty` and `isTouched` are set to `true`, and evaluation
+ * stops at the first validator that returns a truthy error message.
  */
 export function validate<T>(
   state: FieldState<T>,
-  ...validators: Array<SyncValidator<T> | undefined>
+  validators:
+    | Array<SyncValidator<T> | undefined>
+    | SyncValidator<T>
+    | undefined,
+  validationMode?: ValidationMode | undefined,
 ): FieldState<T> {
-  for (const validator of validators) {
+  if (!shouldValidate(state, validationMode)) {
+    return state;
+  }
+
+  const _validators = Array.isArray(validators) ? validators : [validators];
+
+  for (const validator of _validators) {
     const errorMessage = validator?.(state.value);
     if (errorMessage) {
       return {
@@ -45,15 +58,25 @@ export function validate<T>(
 }
 
 /**
- * Runs the provided synchronous and/or asynchronous validators against the current field value and returns an updated {@link FieldState}.
- * Sets `isDirty` and `isTouched` to `true`. All validators run in parallel; the first truthy error message is used.
+ * Validates the field with synchronous and/or asynchronous validators and returns the next {@link FieldState}.
+ *
+ * If `validationMode` blocks validation, the original state is returned unchanged.
+ * When validation runs, all validators are awaited in parallel and the first truthy
+ * error in validator-list order is used.
  */
 export async function validateAsync<T>(
   state: FieldState<T>,
-  ...validators: Array<Validator<T> | undefined>
+  validators: Array<Validator<T> | undefined> | Validator<T> | undefined,
+  validationMode?: ValidationMode | undefined,
 ): Promise<FieldState<T>> {
+  if (!shouldValidate(state, validationMode)) {
+    return state;
+  }
+
+  const _validators = Array.isArray(validators) ? validators : [validators];
+
   const errorMessages = await Promise.all(
-    validators.map((validator) => validator?.(state.value)),
+    _validators.map((validator) => validator?.(state.value)),
   );
   const errorMessage = errorMessages.find(Boolean);
 
@@ -78,32 +101,17 @@ export async function validateAsync<T>(
   };
 }
 
-/**
- * Runs the provided synchronous validators only if the field is dirty (i.e. the value has been changed).
- * Returns the state unchanged if the field is not dirty.
- */
-export function validateIfDirty<T>(
+export function shouldValidate<T>(
   state: FieldState<T>,
-  ...validators: Array<SyncValidator<T> | undefined>
-): FieldState<T> {
-  if (!state.isDirty) {
-    return state;
-  }
-
-  return validate(state, ...validators);
-}
-
-/**
- * Runs the provided synchronous and/or asynchronous validators only if the field is dirty (i.e. the value has been changed).
- * Returns the state unchanged if the field is not dirty.
- */
-export async function validateIfDirtyAsync<T>(
-  state: FieldState<T>,
-  ...validators: Array<Validator<T> | undefined>
-): Promise<FieldState<T>> {
-  if (!state.isDirty) {
-    return state;
-  }
-
-  return validateAsync(state, ...validators);
+  validationMode: ValidationMode | undefined,
+) {
+  return (
+    validationMode === undefined ||
+    (validationMode === "touched" && state.isTouched) ||
+    (validationMode === "dirty" && state.isDirty) ||
+    (validationMode === "touchedAndDirty" &&
+      state.isTouched &&
+      state.isDirty) ||
+    (validationMode === "touchedOrDirty" && (state.isTouched || state.isDirty))
+  );
 }

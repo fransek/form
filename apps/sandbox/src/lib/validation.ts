@@ -30,7 +30,7 @@ export function validatePriority(value: string | null) {
 export function validateStartDate(dueDate: string) {
   return (value: string) => {
     if (value && !isMatch(value, dateFormat)) {
-      return `Must match format ${dateFormat}`;
+      return `Invalid date or format. Select a date in the format of ${dateFormat}`;
     }
     if (
       dueDate &&
@@ -45,7 +45,7 @@ export function validateStartDate(dueDate: string) {
 export function validateDueDate(startDate: string) {
   return (value: string) => {
     if (value && !isMatch(value, dateFormat)) {
-      return `Must match format ${dateFormat}`;
+      return `Invalid date or format. Select a date in the format of ${dateFormat}`;
     }
     if (
       startDate &&

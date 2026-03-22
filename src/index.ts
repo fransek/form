@@ -1,11 +1,5 @@
 export { Field } from "./lib/Field";
-export {
-  createFieldState,
-  validate,
-  validateAsync,
-  validateIfDirty,
-  validateIfDirtyAsync,
-} from "./lib/fieldState";
+export { createFieldState, validate, validateAsync } from "./lib/fieldState";
 export { Form } from "./lib/Form";
 export type {
   AsyncValidator,

@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import {
+  dateFormat,
   validateAssignee,
   validateDueDate,
   validatePriority,
@@ -15,7 +16,7 @@ import {
   Field,
   FieldState,
   Form,
-  validateIfDirty,
+  validate,
 } from "@fransek/form";
 import {
   Checkbox,
@@ -173,9 +174,10 @@ export function FormExample() {
             setFormData((prev) => ({
               ...prev,
               startDate,
-              dueDate: validateIfDirty(
+              dueDate: validate(
                 prev.dueDate,
                 validateDueDate(startDate.value),
+                "touchedAndDirty",
               ),
             }))
           }
@@ -192,6 +194,7 @@ export function FormExample() {
               value={props.value}
               ref={props.ref}
               isValidating={props.isValidating}
+              format={dateFormat}
               calendarProps={{
                 autoFocus: false,
               }}
@@ -205,9 +208,10 @@ export function FormExample() {
             setFormData((prev) => ({
               ...prev,
               dueDate,
-              startDate: validateIfDirty(
+              startDate: validate(
                 prev.startDate,
                 validateStartDate(dueDate.value),
+                "touchedAndDirty",
               ),
             }))
           }
@@ -224,6 +228,7 @@ export function FormExample() {
               value={props.value}
               ref={props.ref}
               isValidating={props.isValidating}
+              format={dateFormat}
               calendarProps={{
                 autoFocus: false,
               }}
