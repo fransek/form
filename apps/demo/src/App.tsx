@@ -1,6 +1,6 @@
 "use client";
 
-import { createFieldState, Field, Form } from "@fransek/form";
+import { createFieldState, Field, Form, validate } from "@fransek/form";
 import { useState } from "react";
 import styles from "./App.module.css";
 
@@ -14,6 +14,14 @@ const initialFormData = {
 };
 
 export default function App() {
+  function validateRepeatPassword(password: string) {
+    return (repeatPassword: string) => {
+      if (repeatPassword !== password) {
+        return "Passwords do not match";
+      }
+    };
+  }
+
   const [formData, setFormData] = useState(initialFormData);
   return (
     <main className={styles.main}>
@@ -79,7 +87,15 @@ export default function App() {
         <Field
           state={formData.password}
           onChange={(password) =>
-            setFormData((prev) => ({ ...prev, password }))
+            setFormData((prev) => ({
+              ...prev,
+              password,
+              repeatPassword: validate(
+                formData.repeatPassword,
+                validateRepeatPassword(password.value),
+                "touchedAndDirty",
+              ),
+            }))
           }
           validation={{
             onChange: (password) => {
@@ -121,11 +137,7 @@ export default function App() {
             setFormData((prev) => ({ ...prev, repeatPassword }))
           }
           validation={{
-            onChange: (repeatPassword) => {
-              if (repeatPassword !== formData.password.value) {
-                return "Passwords do not match";
-              }
-            },
+            onChange: validateRepeatPassword(formData.password.value),
           }}
         >
           {(props) => (
