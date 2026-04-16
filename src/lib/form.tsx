@@ -3,26 +3,9 @@ import { focusFirstError } from "./focus-first-error";
 import {
   FieldMap,
   FormContextValue,
+  FormProps,
   ValidateFormOptions,
-  ValidationMode,
 } from "./types";
-
-/** Props for the {@link Form} component. */
-interface FormProps extends Omit<React.ComponentProps<"form">, "onSubmit"> {
-  /** Default validation mode applied to all fields in the form. Defaults to `"touchedAndDirty"`. */
-  validationMode?: ValidationMode;
-  /** Default debounce delay in milliseconds for async validators. Defaults to `500`. */
-  debounceMs?: number;
-  /**
-   * Submit handler called when the form is submitted.
-   * Receives the submit event and a `validateAllFields` function that triggers
-   * validation on all registered fields and returns whether the form is valid.
-   */
-  onSubmit?: (
-    e: React.SubmitEvent<HTMLFormElement>,
-    validateForm: (options?: ValidateFormOptions) => Promise<boolean>,
-  ) => void;
-}
 
 /**
  * A form component that provides context for coordinating field validation.
@@ -56,7 +39,7 @@ export function Form({
     [],
   );
 
-  const unregisterField = useCallback((id: string) => {
+  const deregisterField = useCallback((id: string) => {
     fieldsRef.current.delete(id);
   }, []);
 
@@ -88,7 +71,7 @@ export function Form({
     <FormContext.Provider
       value={{
         registerField,
-        unregisterField,
+        deregisterField,
         validationMode,
         debounceMs,
       }}
@@ -100,7 +83,7 @@ export function Form({
 
 export const FormContext = React.createContext<FormContextValue>({
   registerField: () => {},
-  unregisterField: () => {},
+  deregisterField: () => {},
 });
 
 export function useFormContext() {

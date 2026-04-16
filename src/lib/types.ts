@@ -1,3 +1,5 @@
+import React from "react";
+
 /** Represents the state of a single form field. */
 export interface FieldState<T> {
   /** The current value of the field. */
@@ -101,8 +103,8 @@ export interface FormContextValue {
     validate: () => Promise<boolean>,
     commitPendingValidation: () => void,
   ) => void;
-  /** Unregisters a field from the form. */
-  unregisterField: (id: string) => void;
+  /** Deregisters a field from the form. */
+  deregisterField: (id: string) => void;
 }
 
 export type FieldMap = Map<
@@ -120,3 +122,33 @@ export interface ValidateFormOptions {
   /** Additional offset in pixels to apply when scrolling to the first error. Defaults to `100`. */
   scrollOffset?: number;
 }
+
+/** Props for the {@link Form} component. */
+export interface FormProps extends Omit<
+  React.ComponentProps<"form">,
+  "onSubmit"
+> {
+  /** Default validation mode applied to all fields in the form. Defaults to `"touchedAndDirty"`. */
+  validationMode?: ValidationMode;
+  /** Default debounce delay in milliseconds for async validators. Defaults to `500`. */
+  debounceMs?: number;
+  /**
+   * Submit handler called when the form is submitted.
+   * Receives the submit event and a `validateAllFields` function that triggers
+   * validation on all registered fields and returns whether the form is valid.
+   */
+  onSubmit?: (
+    e: React.SubmitEvent<HTMLFormElement>,
+    validateForm: (options?: ValidateFormOptions) => Promise<boolean>,
+  ) => void;
+}
+
+export type DependencyValidationHook =
+  | "onChange"
+  | "onBlur"
+  | "onChangeAsync"
+  | "onBlurAsync";
+
+export type DependenciesByHook = Partial<
+  Record<DependencyValidationHook, readonly unknown[]>
+>;
