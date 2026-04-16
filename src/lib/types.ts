@@ -121,7 +121,9 @@ export interface ValidateFormOptions {
   focusFirstError?: boolean;
   /** Additional offset in pixels to apply when scrolling to the first error. Defaults to `100`. */
   scrollOffset?: number;
-} /** Props for the {@link Form} component. */
+}
+
+/** Props for the {@link Form} component. */
 
 export interface FormProps extends Omit<
   React.ComponentProps<"form">,

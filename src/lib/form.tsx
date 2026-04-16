@@ -71,7 +71,7 @@ export function Form({
     <FormContext.Provider
       value={{
         registerField,
-        deregisterField: deregisterField,
+        deregisterField,
         validationMode,
         debounceMs,
       }}

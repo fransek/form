@@ -116,7 +116,9 @@ export function Field<T>(props: FieldProps<T>) {
   }, [id, registerField, validation, onChange, deregisterField]);
 
   useEffect(() => {
-    async function runDependencyValidation(changedHooks: string[]) {
+    async function runDependencyValidation(
+      changedHooks: ReturnType<typeof getChangedDependencyHooks>,
+    ) {
       const value = stateRef.current.value;
       const currentValidation = ++validationIdRef.current;
       const syncValidators = [
