@@ -15,13 +15,13 @@ function RegisteredField({
   validate,
   commitPendingValidation,
 }: RegisteredFieldProps) {
-  const { registerField, unregisterField } = useFormContext();
+  const { registerField, deregisterField } = useFormContext();
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     registerField(id, () => ref.current, validate, commitPendingValidation);
-    return () => unregisterField(id);
-  }, [commitPendingValidation, id, registerField, unregisterField, validate]);
+    return () => deregisterField(id);
+  }, [commitPendingValidation, id, registerField, deregisterField, validate]);
 
   return <div ref={ref} data-testid={id} tabIndex={-1} />;
 }
@@ -148,7 +148,7 @@ describe("Form", () => {
     });
 
     function SwappingRegisteredField() {
-      const { registerField, unregisterField } = useFormContext();
+      const { registerField, deregisterField } = useFormContext();
       const ref = useRef<HTMLDivElement>(null);
       const [version, setVersion] = useState(0);
 
@@ -159,8 +159,8 @@ describe("Form", () => {
           validate,
           commitPendingValidation,
         );
-        return () => unregisterField("swapping-field");
-      }, [registerField, unregisterField, validate, commitPendingValidation]);
+        return () => deregisterField("swapping-field");
+      }, [registerField, deregisterField, validate, commitPendingValidation]);
 
       return (
         <>

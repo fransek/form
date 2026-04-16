@@ -808,7 +808,7 @@ describe("Field", () => {
                 registrations.validate = validate;
                 registrations.commitPendingValidation = commitPendingValidation;
               },
-              unregisterField: () => {
+              deregisterField: () => {
                 registrations.validate = undefined;
                 registrations.commitPendingValidation = undefined;
               },

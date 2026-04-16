@@ -6,6 +6,7 @@ export type {
   FieldProps,
   FieldRenderProps,
   FieldState,
+  FormProps,
   SyncValidator,
   Validation,
   ValidationMode,
