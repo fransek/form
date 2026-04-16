@@ -148,6 +148,34 @@ By default, errors are shown only after the field has been both touched **and** 
 <Field validationMode="dirty" ...>
 ```
 
+### Validation dependencies
+
+Use dependency arrays when a validator depends on values outside the field itself.
+When one of those values changes, the field is revalidated using the validators whose dependency arrays changed.
+
+```tsx
+<Field
+  state={repeatPassword}
+  onChange={setRepeatPassword}
+  validation={{
+    onChange: (value) =>
+      value !== password.value ? "Passwords do not match" : undefined,
+    onChangeDependencies: [password.value],
+  }}
+>
+  {(props) => (
+    <input
+      value={props.value}
+      onChange={(e) => props.handleChange(e.target.value)}
+      onBlur={props.handleBlur}
+      ref={props.ref}
+    />
+  )}
+</Field>
+```
+
+In this example, changing `password` reruns the repeat-password check.
+
 ## Form
 
 `<Form>` is a thin wrapper around `<form>` that provides context to child fields and coordinates submit-time validation.
@@ -229,4 +257,3 @@ setItems((prev) => [...prev, { id: nextId++, state: createFieldState("") }]);
   </Field>
 ))}
 ```
-

@@ -546,6 +546,250 @@ describe("Field", () => {
       expectAttribute(input, "data-isvalid", "true");
       expect((input as HTMLInputElement).value).toBe("good");
     });
+
+    it("should revalidate when validator dependencies change", async () => {
+      const user = userEvent.setup();
+
+      const TestComponent = () => {
+        const [password, setPassword] = useState(createFieldState(""));
+        const [repeatPassword, setRepeatPassword] = useState(
+          createFieldState(""),
+        );
+
+        return (
+          <>
+            <Field<string> state={password} onChange={setPassword}>
+              {({ value, handleChange, handleBlur, ref }) => (
+                <input
+                  data-testid="password-input"
+                  value={value}
+                  onChange={(e) => handleChange(e.target.value)}
+                  onBlur={handleBlur}
+                  ref={ref}
+                />
+              )}
+            </Field>
+            <Field<string>
+              state={repeatPassword}
+              onChange={setRepeatPassword}
+              validation={{
+                onChange: (value) =>
+                  value !== password.value
+                    ? "Passwords do not match"
+                    : undefined,
+                onChangeDependencies: [password.value],
+              }}
+            >
+              {({
+                value,
+                handleChange,
+                handleBlur,
+                ref,
+                errorMessage,
+                isDirty,
+                isTouched,
+              }) => (
+                <input
+                  data-testid="repeat-password-input"
+                  value={value}
+                  onChange={(e) => handleChange(e.target.value)}
+                  onBlur={handleBlur}
+                  ref={ref}
+                  data-errormessage={errorMessage}
+                  data-isdirty={isDirty}
+                  data-istouched={isTouched}
+                />
+              )}
+            </Field>
+          </>
+        );
+      };
+
+      render(<TestComponent />);
+      const passwordInput = screen.getByTestId("password-input");
+      const repeatPasswordInput = screen.getByTestId("repeat-password-input");
+
+      await user.type(repeatPasswordInput, "abc");
+      await blurInput(repeatPasswordInput);
+
+      await waitFor(() => {
+        expectErrorMessage(repeatPasswordInput, "Passwords do not match");
+        expectAttribute(repeatPasswordInput, "data-isdirty", "true");
+        expectAttribute(repeatPasswordInput, "data-istouched", "true");
+      });
+
+      await user.type(passwordInput, "abc");
+
+      await waitFor(() => {
+        expectErrorMessage(repeatPasswordInput, null);
+      });
+    });
+
+    it("should run only validators whose dependency arrays changed", async () => {
+      const user = userEvent.setup();
+      const asyncPasswordValidator = vi.fn(async () => "Async should not run");
+      const asyncRoleValidator = vi.fn(async () => "Async role mismatch");
+
+      const TestComponent = () => {
+        const [password, setPassword] = useState(createFieldState(""));
+        const [role, setRole] = useState(createFieldState("user"));
+        const [repeatPassword, setRepeatPassword] = useState(
+          createFieldState(""),
+        );
+
+        return (
+          <>
+            <Field<string> state={password} onChange={setPassword}>
+              {({ value, handleChange, handleBlur, ref }) => (
+                <input
+                  data-testid="password-input"
+                  value={value}
+                  onChange={(e) => handleChange(e.target.value)}
+                  onBlur={handleBlur}
+                  ref={ref}
+                />
+              )}
+            </Field>
+            <Field<string> state={role} onChange={setRole}>
+              {({ value, handleChange, handleBlur, ref }) => (
+                <input
+                  data-testid="role-input"
+                  value={value}
+                  onChange={(e) => handleChange(e.target.value)}
+                  onBlur={handleBlur}
+                  ref={ref}
+                />
+              )}
+            </Field>
+            <Field<string>
+              state={repeatPassword}
+              onChange={setRepeatPassword}
+              validation={{
+                onChange: (value) =>
+                  value !== password.value
+                    ? "Passwords do not match"
+                    : undefined,
+                onChangeDependencies: [password.value],
+                onChangeAsync: asyncPasswordValidator,
+                onChangeAsyncDependencies: [role.value],
+                onBlurAsync: asyncRoleValidator,
+                onBlurAsyncDependencies: [role.value],
+              }}
+            >
+              {({ value, handleChange, handleBlur, ref, errorMessage }) => (
+                <input
+                  data-testid="repeat-password-input"
+                  value={value}
+                  onChange={(e) => handleChange(e.target.value)}
+                  onBlur={handleBlur}
+                  ref={ref}
+                  data-errormessage={errorMessage}
+                />
+              )}
+            </Field>
+          </>
+        );
+      };
+
+      render(<TestComponent />);
+      const passwordInput = screen.getByTestId("password-input");
+      const roleInput = screen.getByTestId("role-input");
+      const repeatPasswordInput = screen.getByTestId("repeat-password-input");
+
+      await user.type(repeatPasswordInput, "abc");
+      await blurInput(repeatPasswordInput);
+
+      await waitFor(() => {
+        expectErrorMessage(repeatPasswordInput, "Passwords do not match");
+      });
+
+      asyncPasswordValidator.mockClear();
+      asyncRoleValidator.mockClear();
+
+      await user.type(passwordInput, "abc");
+
+      await waitFor(() => {
+        expectErrorMessage(repeatPasswordInput, null);
+      });
+
+      expect(asyncPasswordValidator).not.toHaveBeenCalled();
+      expect(asyncRoleValidator).not.toHaveBeenCalled();
+
+      await user.clear(roleInput);
+      await user.type(roleInput, "admin");
+
+      await waitFor(() => {
+        expect(asyncPasswordValidator).toHaveBeenCalled();
+        expect(asyncRoleValidator).toHaveBeenCalled();
+      });
+    });
+
+    it("should not keep isValidating true when dependency change does not rerun async validator", async () => {
+      const user = userEvent.setup();
+
+      const TestComponent = () => {
+        const [password, setPassword] = useState(createFieldState("taken"));
+        const [repeatPassword, setRepeatPassword] = useState(
+          createFieldState(""),
+        );
+
+        return (
+          <>
+            <Field<string> state={password} onChange={setPassword}>
+              {({ value, handleChange, handleBlur, ref }) => (
+                <input
+                  data-testid="password-input"
+                  value={value}
+                  onChange={(e) => handleChange(e.target.value)}
+                  onBlur={handleBlur}
+                  ref={ref}
+                />
+              )}
+            </Field>
+            <Field<string>
+              state={repeatPassword}
+              onChange={setRepeatPassword}
+              validation={{
+                onChange: (value) =>
+                  value !== password.value
+                    ? "Passwords do not match"
+                    : undefined,
+                onChangeDependencies: [password.value],
+                onChangeAsync: async (value) => {
+                  await new Promise((resolve) => setTimeout(resolve, 200));
+                  return value === "taken" ? "Taken" : undefined;
+                },
+              }}
+              debounceMs={100}
+              validationMode="dirty"
+            >
+              {({ value, handleChange, handleBlur, ref, isValidating }) => (
+                <input
+                  data-testid="repeat-password-input"
+                  value={value}
+                  onChange={(e) => handleChange(e.target.value)}
+                  onBlur={handleBlur}
+                  ref={ref}
+                  data-isvalidating={isValidating}
+                />
+              )}
+            </Field>
+          </>
+        );
+      };
+
+      render(<TestComponent />);
+      const passwordInput = screen.getByTestId("password-input");
+      const repeatPasswordInput = screen.getByTestId("repeat-password-input");
+
+      await user.type(repeatPasswordInput, "taken");
+      await waitFor(() =>
+        expectAttribute(repeatPasswordInput, "data-isvalidating", "true"),
+      );
+
+      await user.type(passwordInput, "x");
+      expectAttribute(repeatPasswordInput, "data-isvalidating", "false");
+    });
   });
 
   describe("form registration", () => {
@@ -602,22 +846,32 @@ describe("Field", () => {
       return { input, user, registrations, onChangeSpy };
     };
 
-    it("should skip validation when touched and dirty without submit validators", async () => {
-      const { input, user, registrations, onChangeSpy } =
-        renderWithFormContext();
+    it("should revalidate on submit when touched and dirty", async () => {
+      const onChangeValidatorShouldFail = { current: false };
+      const { input, user, registrations, onChangeSpy } = renderWithFormContext(
+        {
+          onChange: () =>
+            onChangeValidatorShouldFail.current ? "Now invalid" : undefined,
+        },
+      );
 
       await user.type(input, "abc");
       await user.tab();
 
       onChangeSpy.mockClear();
+      onChangeValidatorShouldFail.current = true;
 
       let validationResult: boolean | undefined;
       await act(async () => {
         validationResult = await registrations.validate!();
       });
+      await act(async () => registrations.commitPendingValidation?.());
 
-      expect(validationResult).toBe(true);
-      expect(onChangeSpy).not.toHaveBeenCalled();
+      expect(validationResult).toBe(false);
+      expect(onChangeSpy).toHaveBeenCalledTimes(1);
+      const committedState = onChangeSpy.mock.calls[0][0];
+      expect(committedState.errorMessage).toBe("Now invalid");
+      expect(committedState.isValid).toBe(false);
     });
 
     it("should run submit validation and commit pending result", async () => {

@@ -122,6 +122,7 @@ export default function Page() {
               return "Passwords do not match";
             }
           },
+          onChangeDependencies: [formData.password.value],
         }}
       >
         {(props) => (

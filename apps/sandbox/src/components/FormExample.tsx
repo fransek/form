@@ -11,13 +11,7 @@ import {
   validateSummaryAsync,
   validateType,
 } from "@/lib/validation";
-import {
-  createFieldState,
-  Field,
-  FieldState,
-  Form,
-  validate,
-} from "@fransek/form";
+import { createFieldState, Field, FieldState, Form } from "@fransek/form";
 import {
   Checkbox,
   CheckboxGroup,
@@ -171,18 +165,11 @@ export function FormExample() {
         <Field
           state={formData.startDate}
           onChange={(startDate) =>
-            setFormData((prev) => ({
-              ...prev,
-              startDate,
-              dueDate: validate(
-                prev.dueDate,
-                validateDueDate(startDate.value),
-                "touchedAndDirty",
-              ),
-            }))
+            setFormData((prev) => ({ ...prev, startDate }))
           }
           validation={{
             onChange: validateStartDate(formData.dueDate.value),
+            onChangeDependencies: [formData.dueDate.value],
           }}
         >
           {(props) => (
@@ -204,19 +191,10 @@ export function FormExample() {
 
         <Field
           state={formData.dueDate}
-          onChange={(dueDate) =>
-            setFormData((prev) => ({
-              ...prev,
-              dueDate,
-              startDate: validate(
-                prev.startDate,
-                validateStartDate(dueDate.value),
-                "touchedAndDirty",
-              ),
-            }))
-          }
+          onChange={(dueDate) => setFormData((prev) => ({ ...prev, dueDate }))}
           validation={{
             onChange: validateDueDate(formData.startDate.value),
+            onChangeDependencies: [formData.startDate.value],
           }}
         >
           {(props) => (

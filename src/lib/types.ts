@@ -28,12 +28,20 @@ export interface FieldRenderProps<T> extends FieldState<T> {
 export interface Validation<T> {
   /** Synchronous validator to run when the field value changes. */
   onChange?: SyncValidator<T>;
+  /** External values that should trigger `onChange` revalidation when they change. */
+  onChangeDependencies?: readonly unknown[];
   /** Asynchronous validator to run when the field value changes (debounced). */
   onChangeAsync?: AsyncValidator<T>;
+  /** External values that should trigger `onChangeAsync` revalidation when they change. */
+  onChangeAsyncDependencies?: readonly unknown[];
   /** Synchronous validator to run when the field loses focus. */
   onBlur?: SyncValidator<T>;
+  /** External values that should trigger `onBlur` revalidation when they change. */
+  onBlurDependencies?: readonly unknown[];
   /** Asynchronous validator to run when the field loses focus. */
   onBlurAsync?: AsyncValidator<T>;
+  /** External values that should trigger `onBlurAsync` revalidation when they change. */
+  onBlurAsyncDependencies?: readonly unknown[];
   /** Synchronous validator to run when the form is submitted. */
   onSubmit?: SyncValidator<T>;
   /** Asynchronous validator to run when the form is submitted. */
@@ -89,7 +97,7 @@ export interface FormContextValue {
   /** Registers a field with the form for submit validation. */
   registerField: (
     id: string,
-    ref: HTMLElement | null,
+    getRef: () => HTMLElement | null,
     validate: () => Promise<boolean>,
     commitPendingValidation: () => void,
   ) => void;
@@ -100,7 +108,7 @@ export interface FormContextValue {
 export type FieldMap = Map<
   string,
   {
-    ref: HTMLElement | null;
+    getRef: () => HTMLElement | null;
     validate: () => Promise<boolean>;
     commitPendingValidation: () => void;
   }
