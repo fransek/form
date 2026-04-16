@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Form, useFormContext } from "./form";
 
@@ -19,7 +19,7 @@ function RegisteredField({
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    registerField(id, ref.current, validate, commitPendingValidation);
+    registerField(id, () => ref.current, validate, commitPendingValidation);
     return () => unregisterField(id);
   }, [commitPendingValidation, id, registerField, unregisterField, validate]);
 
@@ -105,6 +105,93 @@ describe("Form", () => {
     await waitFor(() => {
       expect(screen.getByTestId("first-field")).toHaveFocus();
       expect(window.scrollTo).toHaveBeenCalled();
+    });
+  });
+
+  it("should support validateForm options in onSubmit callback", async () => {
+    const user = userEvent.setup();
+    const validateFirst = vi.fn(async () => false);
+    const commitFirst = vi.fn();
+    const onSubmit = vi.fn(async (e, validateAllFields) => {
+      e.preventDefault();
+      await validateAllFields({ focusFirstError: false });
+    });
+
+    render(
+      <Form onSubmit={onSubmit}>
+        <RegisteredField
+          id="first-field"
+          validate={validateFirst}
+          commitPendingValidation={commitFirst}
+        />
+        <button type="submit">Submit</button>
+      </Form>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Submit" }));
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledTimes(1);
+      expect(validateFirst).toHaveBeenCalledTimes(1);
+      expect(commitFirst).toHaveBeenCalledTimes(1);
+      expect(window.scrollTo).not.toHaveBeenCalled();
+    });
+  });
+
+  it("should focus current ref after registered field remounts", async () => {
+    const user = userEvent.setup();
+    const validate = vi.fn(async () => false);
+    const commitPendingValidation = vi.fn();
+    const onSubmit = vi.fn(async (e, validateAllFields) => {
+      e.preventDefault();
+      await validateAllFields();
+    });
+
+    function SwappingRegisteredField() {
+      const { registerField, unregisterField } = useFormContext();
+      const ref = useRef<HTMLDivElement>(null);
+      const [version, setVersion] = useState(0);
+
+      useEffect(() => {
+        registerField(
+          "swapping-field",
+          () => ref.current,
+          validate,
+          commitPendingValidation,
+        );
+        return () => unregisterField("swapping-field");
+      }, [registerField, unregisterField, validate, commitPendingValidation]);
+
+      return (
+        <>
+          <button
+            type="button"
+            onClick={() => setVersion((current) => current + 1)}
+          >
+            Remount field
+          </button>
+          <div
+            key={version}
+            ref={ref}
+            tabIndex={-1}
+            data-testid={`swapping-field-${version}`}
+          />
+        </>
+      );
+    }
+
+    render(
+      <Form onSubmit={onSubmit}>
+        <SwappingRegisteredField />
+        <button type="submit">Submit</button>
+      </Form>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Remount field" }));
+    await user.click(screen.getByRole("button", { name: "Submit" }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("swapping-field-1")).toHaveFocus();
     });
   });
 });

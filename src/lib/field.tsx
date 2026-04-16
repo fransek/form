@@ -1,7 +1,49 @@
 import { useEffect, useId, useRef } from "react";
 import { useFormContext } from "./form";
-import { validate, validateAsync } from "./state-utils";
+import { shouldValidate, validate, validateAsync } from "./state-utils";
 import { FieldProps, FieldState } from "./types";
+
+type DependencyValidationHook =
+  | "onChange"
+  | "onBlur"
+  | "onChangeAsync"
+  | "onBlurAsync";
+
+const haveDependenciesChanged = (
+  previous: readonly unknown[],
+  next: readonly unknown[],
+) =>
+  previous.length !== next.length ||
+  previous.some((dependency, index) => !Object.is(dependency, next[index]));
+
+const DEPENDENCY_VALIDATION_HOOKS: DependencyValidationHook[] = [
+  "onChange",
+  "onBlur",
+  "onChangeAsync",
+  "onBlurAsync",
+];
+
+const getSyncValidationError = <T,>(
+  value: T,
+  validators: Array<((value: T) => React.ReactNode) | undefined>,
+) => {
+  for (const validator of validators) {
+    const error = validator?.(value);
+    if (error) {
+      return error;
+    }
+  }
+};
+
+const getAsyncValidationError = async <T,>(
+  value: T,
+  validators: Array<((value: T) => Promise<React.ReactNode>) | undefined>,
+) => {
+  const errors = await Promise.all(
+    validators.map((validator) => validator?.(value)),
+  );
+  return errors.find(Boolean);
+};
 
 /**
  * A headless form field component that manages validation state using a render prop pattern.
@@ -36,6 +78,14 @@ export function Field<T>(props: FieldProps<T>) {
   const validationIdRef = useRef(0);
   const isValidatingOnBlurRef = useRef(false);
   const isValidatingOnChangeRef = useRef(false);
+  const previousDependenciesRef = useRef<
+    Partial<Record<DependencyValidationHook, readonly unknown[]>>
+  >({
+    onChange: validation?.onChangeDependencies,
+    onBlur: validation?.onBlurDependencies,
+    onChangeAsync: validation?.onChangeAsyncDependencies,
+    onBlurAsync: validation?.onBlurAsyncDependencies,
+  });
   const pendingValidationRef = useRef<FieldState<T> | null>(null);
   const fieldRef = useRef<HTMLElement | null>(null);
   const id = useId();
@@ -70,16 +120,6 @@ export function Field<T>(props: FieldProps<T>) {
 
   useEffect(() => {
     async function performValidation() {
-      if (
-        !validation?.onSubmit &&
-        !validation?.onSubmitAsync &&
-        !stateRef.current.isValidating &&
-        stateRef.current.isTouched &&
-        stateRef.current.isDirty &&
-        document.activeElement !== fieldRef.current
-      ) {
-        return stateRef.current.isValid;
-      }
       validationIdRef.current++;
       pendingValidationRef.current = validate(stateRef.current, [
         validation?.onChange,
@@ -105,7 +145,7 @@ export function Field<T>(props: FieldProps<T>) {
 
     registerField(
       id,
-      fieldRef.current,
+      () => fieldRef.current,
       performValidation,
       commitPendingValidation,
     );
@@ -114,6 +154,90 @@ export function Field<T>(props: FieldProps<T>) {
       unregisterField(id);
     };
   }, [id, registerField, validation, onChange, unregisterField]);
+
+  useEffect(() => {
+    const currentDependenciesByHook: Partial<
+      Record<DependencyValidationHook, readonly unknown[]>
+    > = {
+      onChange: validation?.onChangeDependencies,
+      onBlur: validation?.onBlurDependencies,
+      onChangeAsync: validation?.onChangeAsyncDependencies,
+      onBlurAsync: validation?.onBlurAsyncDependencies,
+    };
+    const previousDependenciesByHook = previousDependenciesRef.current;
+    previousDependenciesRef.current = currentDependenciesByHook;
+
+    const changedHooks = DEPENDENCY_VALIDATION_HOOKS.filter((hook) => {
+      const previous = previousDependenciesByHook[hook];
+      const current = currentDependenciesByHook[hook];
+      return Boolean(
+        previous && current && haveDependenciesChanged(previous, current),
+      );
+    });
+
+    if (changedHooks.length === 0) {
+      return;
+    }
+
+    if (!shouldValidate(stateRef.current, validationMode)) {
+      return;
+    }
+
+    if (validationTimeoutRef.current) {
+      clearTimeout(validationTimeoutRef.current);
+      validationTimeoutRef.current = null;
+    }
+
+    const value = stateRef.current.value;
+    const currentValidation = ++validationIdRef.current;
+    const syncValidators = [
+      changedHooks.includes("onChange") ? validation?.onChange : undefined,
+      changedHooks.includes("onBlur") ? validation?.onBlur : undefined,
+    ];
+    const asyncValidators = [
+      changedHooks.includes("onChangeAsync")
+        ? validation?.onChangeAsync
+        : undefined,
+      changedHooks.includes("onBlurAsync")
+        ? validation?.onBlurAsync
+        : undefined,
+    ];
+    const hasSyncValidators = syncValidators.some(Boolean);
+    const hasAsyncValidators = asyncValidators.some(Boolean);
+
+    if (!hasSyncValidators && !hasAsyncValidators) {
+      return;
+    }
+
+    const errorMessage = getSyncValidationError(value, syncValidators);
+    const willValidateAsync = Boolean(!errorMessage && hasAsyncValidators);
+
+    onChange({
+      ...stateRef.current,
+      errorMessage,
+      isValid: !errorMessage,
+      isValidating: willValidateAsync,
+    });
+
+    if (!willValidateAsync) {
+      return;
+    }
+
+    isValidatingOnChangeRef.current = true;
+    void getAsyncValidationError(value, asyncValidators).then(
+      (asyncErrorMessage) => {
+        isValidatingOnChangeRef.current = false;
+        if (currentValidation === validationIdRef.current) {
+          onChange({
+            ...stateRef.current,
+            errorMessage: asyncErrorMessage,
+            isValid: !asyncErrorMessage,
+            isValidating: isValidatingOnBlurRef.current,
+          });
+        }
+      },
+    );
+  }, [validation, validationMode, onChange]);
 
   useEffect(() => {
     return () => {

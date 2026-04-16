@@ -20,7 +20,7 @@ interface FormProps extends Omit<React.ComponentProps<"form">, "onSubmit"> {
    */
   onSubmit?: (
     e: React.SubmitEvent<HTMLFormElement>,
-    validateForm: () => Promise<boolean>,
+    validateForm: (options?: ValidateFormOptions) => Promise<boolean>,
   ) => void;
 }
 
@@ -43,12 +43,12 @@ export function Form({
   const registerField = useCallback(
     (
       id: string,
-      ref: HTMLElement | null,
+      getRef: () => HTMLElement | null,
       validate: () => Promise<boolean>,
       commitPendingValidation: () => void,
     ) => {
       fieldsRef.current.set(id, {
-        ref,
+        getRef,
         validate,
         commitPendingValidation,
       });
@@ -70,7 +70,7 @@ export function Form({
       const fields = Array.from(fieldsRef.current.values());
       const validationPromises = fields.map(async (field) => ({
         isValid: await field.validate(),
-        ref: field.ref,
+        ref: field.getRef(),
       }));
       const results = await Promise.all(validationPromises);
       fields.forEach((field) => field.commitPendingValidation());
