@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/@fransek/ui?activeTab=versions
 
+## [0.5.0](https://github.com/fransek/form/compare/v0.4.0...v0.5.0) (2026-04-16)
+
+
+### Features
+
+* add dependency-aware validation and fix form behavior ([#21](https://github.com/fransek/form/issues/21)) ([4009ab1](https://github.com/fransek/form/commit/4009ab1c9d96cec94108761d042ea9c65bcac20a))
+
 ## [0.4.0](https://github.com/fransek/form/compare/v0.3.0...v0.4.0) (2026-03-22)
 
 
