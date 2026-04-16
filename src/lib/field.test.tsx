@@ -723,6 +723,73 @@ describe("Field", () => {
         expect(asyncRoleValidator).toHaveBeenCalled();
       });
     });
+
+    it("should not keep isValidating true when dependency change does not rerun async validator", async () => {
+      const user = userEvent.setup();
+
+      const TestComponent = () => {
+        const [password, setPassword] = useState(createFieldState("taken"));
+        const [repeatPassword, setRepeatPassword] = useState(
+          createFieldState(""),
+        );
+
+        return (
+          <>
+            <Field<string> state={password} onChange={setPassword}>
+              {({ value, handleChange, handleBlur, ref }) => (
+                <input
+                  data-testid="password-input"
+                  value={value}
+                  onChange={(e) => handleChange(e.target.value)}
+                  onBlur={handleBlur}
+                  ref={ref}
+                />
+              )}
+            </Field>
+            <Field<string>
+              state={repeatPassword}
+              onChange={setRepeatPassword}
+              validation={{
+                onChange: (value) =>
+                  value !== password.value
+                    ? "Passwords do not match"
+                    : undefined,
+                onChangeDependencies: [password.value],
+                onChangeAsync: async (value) => {
+                  await new Promise((resolve) => setTimeout(resolve, 200));
+                  return value === "taken" ? "Taken" : undefined;
+                },
+              }}
+              debounceMs={100}
+              validationMode="dirty"
+            >
+              {({ value, handleChange, handleBlur, ref, isValidating }) => (
+                <input
+                  data-testid="repeat-password-input"
+                  value={value}
+                  onChange={(e) => handleChange(e.target.value)}
+                  onBlur={handleBlur}
+                  ref={ref}
+                  data-isvalidating={isValidating}
+                />
+              )}
+            </Field>
+          </>
+        );
+      };
+
+      render(<TestComponent />);
+      const passwordInput = screen.getByTestId("password-input");
+      const repeatPasswordInput = screen.getByTestId("repeat-password-input");
+
+      await user.type(repeatPasswordInput, "taken");
+      await waitFor(() =>
+        expectAttribute(repeatPasswordInput, "data-isvalidating", "true"),
+      );
+
+      await user.type(passwordInput, "x");
+      expectAttribute(repeatPasswordInput, "data-isvalidating", "false");
+    });
   });
 
   describe("form registration", () => {

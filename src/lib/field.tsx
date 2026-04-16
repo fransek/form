@@ -96,6 +96,7 @@ export function Field<T>(props: FieldProps<T>) {
     }
     clearTimeout(validationTimeoutRef.current);
     validationTimeoutRef.current = null;
+    isValidatingOnChangeRef.current = false;
   };
 
   const updateState = (overrides: Partial<FieldState<T>>) => {
@@ -183,11 +184,6 @@ export function Field<T>(props: FieldProps<T>) {
       return;
     }
 
-    if (validationTimeoutRef.current) {
-      clearTimeout(validationTimeoutRef.current);
-      validationTimeoutRef.current = null;
-    }
-
     const value = stateRef.current.value;
     const currentValidation = ++validationIdRef.current;
     const syncValidators = [
@@ -211,6 +207,10 @@ export function Field<T>(props: FieldProps<T>) {
 
     const errorMessage = getSyncValidationError(value, syncValidators);
     const willValidateAsync = Boolean(!errorMessage && hasAsyncValidators);
+
+    if (willValidateAsync && validationTimeoutRef.current) {
+      clearValidationTimeout();
+    }
 
     onChange({
       ...stateRef.current,
