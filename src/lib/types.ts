@@ -124,7 +124,6 @@ export interface ValidateFormOptions {
 }
 
 /** Props for the {@link Form} component. */
-
 export interface FormProps extends Omit<
   React.ComponentProps<"form">,
   "onSubmit"

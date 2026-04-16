@@ -7,7 +7,12 @@ import {
 } from "./field-utils";
 import { useFormContext } from "./form";
 import { shouldValidate, validate, validateAsync } from "./state-utils";
-import { DependenciesByHook, FieldProps, FieldState } from "./types";
+import {
+  DependenciesByHook,
+  DependencyValidationHook,
+  FieldProps,
+  FieldState,
+} from "./types";
 
 /**
  * A headless form field component that manages validation state using a render prop pattern.
@@ -117,7 +122,7 @@ export function Field<T>(props: FieldProps<T>) {
 
   useEffect(() => {
     async function runDependencyValidation(
-      changedHooks: ReturnType<typeof getChangedDependencyHooks>,
+      changedHooks: DependencyValidationHook[],
     ) {
       const value = stateRef.current.value;
       const currentValidation = ++validationIdRef.current;
