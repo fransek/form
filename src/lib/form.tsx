@@ -5,9 +5,9 @@ import { CommitOptions, FieldMap, FormContextValue, FormProps } from "./types";
 /**
  * A form component that provides context for coordinating field validation.
  *
- * Wraps a native `<form>` element and prevents the default submit behavior.
- * On submit, the `onSubmit` callback is called with the submit event and a
- * submit context containing `validate` and `commit` methods.
+ * Wraps a native `<form>` element and forwards submit events to `onSubmit`.
+ * On submit, the callback receives a submit context containing `event`,
+ * `validate`, and `commit` methods.
  */
 export function Form({
   onSubmit,
