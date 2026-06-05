@@ -133,15 +133,15 @@ describe("Form", () => {
     });
   });
 
-  it("should support validate options in onSubmit callback", async () => {
+  it("should support commit options in onSubmit callback", async () => {
     const user = userEvent.setup();
     const validateFirst = vi.fn(async () => false);
     const validateOnCommitFirst = vi.fn(() => false);
     const commitFirst = vi.fn();
     const onSubmit = vi.fn(async ({ event, validate, commit }) => {
       event.preventDefault();
-      await validate({ focusFirstError: false });
-      commit();
+      await validate();
+      commit({ focusFirstError: false });
     });
 
     render(

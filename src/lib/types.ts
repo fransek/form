@@ -124,7 +124,7 @@ export type FieldMap = Map<
   }
 >;
 
-export interface ValidateFormOptions {
+export interface CommitOptions {
   /** If `true`, the first invalid field will be focused after validation. Defaults to `true`. */
   focusFirstError?: boolean;
   /** Additional offset in pixels to apply when scrolling to the first error. Defaults to `100`. */
@@ -157,7 +157,7 @@ export type DependenciesByHook = Partial<
 export type SubmitContext = {
   event: React.SubmitEvent<HTMLFormElement>;
   /** Runs submit-time validation for all registered fields. */
-  validate: (options?: ValidateFormOptions) => Promise<boolean>;
+  validate: () => Promise<boolean>;
   /** Runs `onCommit` validations and commits pending validation state changes. */
-  commit: () => boolean;
+  commit: (options?: CommitOptions) => boolean;
 };

@@ -184,9 +184,9 @@ In this example, changing `password` reruns the repeat-password check.
 <Form
   onSubmit={async ({ event, validate, commit }) => {
     event.preventDefault();
-    const isValid = await validate({ focusFirstError: true, scrollOffset: 100 });
+    const isValid = await validate();
     if (isValid) { /* ... */ }
-    commit();
+    commit({ focusFirstError: true, scrollOffset: 100 });
   }}
   validationMode="touchedAndDirty" // default for all fields
   debounceMs={500}                  // default async debounce for all fields
