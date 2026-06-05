@@ -26,9 +26,10 @@ export default function App() {
   return (
     <main className={styles.main}>
       <Form
-        onSubmit={async ({ event, validate }) => {
+        onSubmit={async ({ event, validate, commit }) => {
           event.preventDefault();
           const isValid = await validate();
+          commit();
           if (isValid) {
             alert("Form submitted successfully!");
           }
