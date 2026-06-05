@@ -796,6 +796,7 @@ describe("Field", () => {
     const renderWithFormContext = (validation?: Validation<string>) => {
       const registrations: {
         validate?: () => Promise<boolean>;
+        validateOnCommit?: () => boolean;
         commitPendingValidation?: () => void;
       } = {};
       const onChangeSpy = vi.fn();
@@ -804,12 +805,20 @@ describe("Field", () => {
         return (
           <FormContext.Provider
             value={{
-              registerField: (_id, _ref, validate, commitPendingValidation) => {
+              registerField: (
+                _id,
+                _ref,
+                validate,
+                validateOnCommit,
+                commitPendingValidation,
+              ) => {
                 registrations.validate = validate;
+                registrations.validateOnCommit = validateOnCommit;
                 registrations.commitPendingValidation = commitPendingValidation;
               },
               deregisterField: () => {
                 registrations.validate = undefined;
+                registrations.validateOnCommit = undefined;
                 registrations.commitPendingValidation = undefined;
               },
               validationMode: "touchedAndDirty",
@@ -904,6 +913,42 @@ describe("Field", () => {
       const committedState =
         onChangeSpy.mock.calls[onChangeSpy.mock.calls.length - 1][0];
       expect(committedState.errorMessage).toBe("Submit async error");
+      expect(committedState.isValid).toBe(false);
+    });
+
+    it("should only run onCommit during commit and apply its result", async () => {
+      const onCommit = vi.fn((value: string) =>
+        value === "abc" ? "Commit error" : undefined,
+      );
+      const { input, user, registrations, onChangeSpy } = renderWithFormContext(
+        {
+          onSubmit: () => undefined,
+          onCommit,
+        },
+      );
+
+      await user.type(input, "abc");
+      await user.tab();
+      onChangeSpy.mockClear();
+
+      let isValidOnSubmit: boolean | undefined;
+      await act(async () => {
+        isValidOnSubmit = await registrations.validate!();
+      });
+      expect(isValidOnSubmit).toBe(true);
+      expect(onCommit).not.toHaveBeenCalled();
+
+      let isValidOnCommit: boolean | undefined;
+      await act(async () => {
+        isValidOnCommit = registrations.validateOnCommit?.();
+      });
+      expect(isValidOnCommit).toBe(false);
+      expect(onCommit).toHaveBeenCalledWith("abc");
+
+      await act(async () => registrations.commitPendingValidation?.());
+      expect(onChangeSpy).toHaveBeenCalledTimes(1);
+      const committedState = onChangeSpy.mock.calls[0][0];
+      expect(committedState.errorMessage).toBe("Commit error");
       expect(committedState.isValid).toBe(false);
     });
   });

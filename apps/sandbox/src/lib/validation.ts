@@ -1,3 +1,4 @@
+import { ServerResponse } from "@/lib/server-simulator";
 import { isMatch } from "date-fns";
 
 export const dateFormat = "MM/dd/yyyy";
@@ -12,6 +13,12 @@ export async function validateSummaryAsync(value: string) {
   await new Promise((resolve) => setTimeout(resolve, 300));
   if (value.toLowerCase().includes("duplicate")) {
     return "A task with this summary already exists";
+  }
+}
+
+export function validateSummaryAfterSubmit(response: ServerResponse | null) {
+  if (response?.ok === false) {
+    return response.errors.find((error) => error.field === "summary")?.message;
   }
 }
 

@@ -95,7 +95,7 @@ Set a default on `<Form validationMode="...">` and override per-field with `<Fie
 `validateAsync` runs all async validators in parallel but returns errors in **validator-list order**, not resolution order.
 
 ### Form submit flow
-`Form.onSubmit` receives `(event, validateForm)`. Call `validateForm({ focusFirstError: true, scrollOffset: 100 })` to run all registered field validators, commit results, and optionally focus the first error.
+`Form.onSubmit` receives a submit context with `event`, `validate`, and `commit`. Call `validate()` to run all registered field validators, then call `commit({ focusFirstError: true, scrollOffset: 100 })` to apply and optionally focus the first error.
 
 ### Test utilities
 Tests use a `setupTest()` helper from `src/lib/test/test-utils.tsx` that renders a controlled test component and returns a `userEvent` instance. Validators are mocked with `vi.fn()`.

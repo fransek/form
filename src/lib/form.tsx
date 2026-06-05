@@ -1,19 +1,13 @@
 import React, { useCallback, useRef } from "react";
 import { focusFirstError } from "./focus-first-error";
-import {
-  FieldMap,
-  FormContextValue,
-  FormProps,
-  ValidateFormOptions,
-} from "./types";
+import { CommitOptions, FieldMap, FormContextValue, FormProps } from "./types";
 
 /**
  * A form component that provides context for coordinating field validation.
  *
- * Wraps a native `<form>` element and prevents the default submit behavior.
- * On submit, the `onSubmit` callback is called with the submit event and a
- * `validateAllFields` function that can be used to trigger validation on all
- * registered {@link Field} components and focus the first invalid field.
+ * Wraps a native `<form>` element and forwards submit events to `onSubmit`.
+ * On submit, the callback receives a submit context containing `event`,
+ * `validate`, and `commit` methods.
  */
 export function Form({
   onSubmit,
@@ -28,11 +22,13 @@ export function Form({
       id: string,
       getRef: () => HTMLElement | null,
       validate: () => Promise<boolean>,
+      validateOnCommit: () => boolean,
       commitPendingValidation: () => void,
     ) => {
       fieldsRef.current.set(id, {
         getRef,
         validate,
+        validateOnCommit,
         commitPendingValidation,
       });
     },
@@ -43,29 +39,35 @@ export function Form({
     fieldsRef.current.delete(id);
   }, []);
 
-  const validateForm = useCallback(
-    async (options: ValidateFormOptions = {}) => {
-      const {
-        focusFirstError: shouldFocusFirstError = true,
-        scrollOffset = 100,
-      } = options;
+  const validate = useCallback(async () => {
+    const fields = Array.from(fieldsRef.current.values());
+    const validationPromises = fields.map((field) => field.validate());
+    const results = await Promise.all(validationPromises);
+    return results.every(Boolean);
+  }, []);
 
-      const fields = Array.from(fieldsRef.current.values());
-      const validationPromises = fields.map(async (field) => ({
-        isValid: await field.validate(),
-        ref: field.getRef(),
-      }));
-      const results = await Promise.all(validationPromises);
-      fields.forEach((field) => field.commitPendingValidation());
-      const hasErrors = results.some((result) => !result.isValid);
+  const commit = useCallback((options: CommitOptions = {}) => {
+    const {
+      focusFirstError: shouldFocusFirstError = true,
+      scrollOffset = 100,
+    } = options;
 
-      if (hasErrors && shouldFocusFirstError) {
-        focusFirstError(results, scrollOffset);
-      }
-      return !hasErrors;
-    },
-    [],
-  );
+    const fields = Array.from(fieldsRef.current.values());
+    const results = fields.map((field) => ({
+      isValid: field.validateOnCommit(),
+      ref: field.getRef(),
+    }));
+
+    const hasErrors = results.some((result) => !result.isValid);
+
+    fields.forEach((field) => field.commitPendingValidation());
+
+    if (hasErrors && shouldFocusFirstError) {
+      focusFirstError(results, scrollOffset);
+    }
+
+    return !hasErrors;
+  }, []);
 
   return (
     <FormContext.Provider
@@ -76,7 +78,10 @@ export function Form({
         debounceMs,
       }}
     >
-      <form onSubmit={(e) => onSubmit?.(e, validateForm)} {...props} />
+      <form
+        onSubmit={(event) => onSubmit?.({ event, validate, commit })}
+        {...props}
+      />
     </FormContext.Provider>
   );
 }

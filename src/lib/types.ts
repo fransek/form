@@ -48,6 +48,12 @@ export interface Validation<T> {
   onSubmit?: SyncValidator<T>;
   /** Asynchronous validator to run when the form is submitted. */
   onSubmitAsync?: AsyncValidator<T>;
+  /** Synchronous validator to run when submit-time validation is committed.
+   *
+   * Runs when `commit` is called from `SubmitContext` in the `onSubmit` handler.
+   * Useful for validations that depend on a submission response.
+   */
+  onCommit?: SyncValidator<T>;
 }
 
 /**
@@ -101,6 +107,7 @@ export interface FormContextValue {
     id: string,
     getRef: () => HTMLElement | null,
     validate: () => Promise<boolean>,
+    validateOnCommit: () => boolean,
     commitPendingValidation: () => void,
   ) => void;
   /** Deregisters a field from the form. */
@@ -112,11 +119,12 @@ export type FieldMap = Map<
   {
     getRef: () => HTMLElement | null;
     validate: () => Promise<boolean>;
+    validateOnCommit: () => boolean;
     commitPendingValidation: () => void;
   }
 >;
 
-export interface ValidateFormOptions {
+export interface CommitOptions {
   /** If `true`, the first invalid field will be focused after validation. Defaults to `true`. */
   focusFirstError?: boolean;
   /** Additional offset in pixels to apply when scrolling to the first error. Defaults to `100`. */
@@ -132,15 +140,8 @@ export interface FormProps extends Omit<
   validationMode?: ValidationMode;
   /** Default debounce delay in milliseconds for async validators. Defaults to `500`. */
   debounceMs?: number;
-  /**
-   * Submit handler called when the form is submitted.
-   * Receives the submit event and a `validateAllFields` function that triggers
-   * validation on all registered fields and returns whether the form is valid.
-   */
-  onSubmit?: (
-    e: React.SubmitEvent<HTMLFormElement>,
-    validateForm: (options?: ValidateFormOptions) => Promise<boolean>,
-  ) => void;
+  /** Callback invoked when the form is submitted. */
+  onSubmit?: (context: SubmitContext) => void;
 }
 
 export type DependencyValidationHook =
@@ -152,3 +153,11 @@ export type DependencyValidationHook =
 export type DependenciesByHook = Partial<
   Record<DependencyValidationHook, readonly unknown[]>
 >;
+
+export type SubmitContext = {
+  event: React.SubmitEvent<HTMLFormElement>;
+  /** Runs submit-time validation for all registered fields. */
+  validate: () => Promise<boolean>;
+  /** Runs `onCommit` validations and commits pending validation state changes. */
+  commit: (options?: CommitOptions) => boolean;
+};

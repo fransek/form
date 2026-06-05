@@ -23,3 +23,9 @@ export const favoriteFruitOptions = [
 export type FavoriteFruitOption =
   | (typeof favoriteFruitOptions)[number]["value"]
   | null;
+
+export const priorities = [
+  { value: "low", label: "Low", className: "bg-success-foreground" },
+  { value: "medium", label: "Medium", className: "bg-warning-foreground" },
+  { value: "high", label: "High", className: "bg-error-foreground" },
+] as const;
