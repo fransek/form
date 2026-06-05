@@ -37,11 +37,12 @@ export function MyForm() {
 
   return (
     <Form
-      onSubmit={async ({ event, validate }) => {
+      onSubmit={async ({ event, validate, commit }) => {
         event.preventDefault();
         if (await validate()) {
           console.log("submitted:", name.value);
         }
+        commit();
       }}
     >
       <Field
@@ -193,7 +194,7 @@ In this example, changing `password` reruns the repeat-password check.
 >
 ```
 
-`validate` runs every registered field's submit validators and returns whether they pass. `commit` then applies pending validation state updates, runs `onCommit` validators, and optionally focuses the first invalid field.
+`validate` runs every registered field's `onChange`, `onBlur`, and `onSubmit` validators and returns whether they pass. `commit` then applies pending validation state updates, runs `onCommit` validators, and optionally focuses the first invalid field.
 
 ## Render Props
 

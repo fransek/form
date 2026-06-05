@@ -41,11 +41,9 @@ export function Form({
 
   const validate = useCallback(async () => {
     const fields = Array.from(fieldsRef.current.values());
-    const validationPromises = fields.map(async (field) => ({
-      isValid: await field.validate(),
-    }));
+    const validationPromises = fields.map((field) => field.validate());
     const results = await Promise.all(validationPromises);
-    return results.every((result) => result.isValid);
+    return results.every(Boolean);
   }, []);
 
   const commit = useCallback((options: CommitOptions = {}) => {
