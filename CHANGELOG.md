@@ -4,6 +4,13 @@
 
 [1]: https://www.npmjs.com/package/@fransek/ui?activeTab=versions
 
+## [0.6.0](https://github.com/fransek/form/compare/v0.5.0...v0.6.0) (2026-06-05)
+
+
+### Features
+
+* after submit validation ([#24](https://github.com/fransek/form/issues/24)) ([a62091d](https://github.com/fransek/form/commit/a62091db2930b310d21a97581f8b4118c2aa05d8))
+
 ## [0.5.0](https://github.com/fransek/form/compare/v0.4.0...v0.5.0) (2026-04-16)
 
 
