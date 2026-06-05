@@ -28,11 +28,13 @@ export function Form({
       id: string,
       getRef: () => HTMLElement | null,
       validate: () => Promise<boolean>,
+      validateAfterSubmit: () => boolean,
       commitPendingValidation: () => void,
     ) => {
       fieldsRef.current.set(id, {
         getRef,
         validate,
+        validateAfterSubmit,
         commitPendingValidation,
       });
     },
@@ -56,13 +58,28 @@ export function Form({
         ref: field.getRef(),
       }));
       const results = await Promise.all(validationPromises);
-      fields.forEach((field) => field.commitPendingValidation());
       const hasErrors = results.some((result) => !result.isValid);
+      const isValid = !hasErrors;
 
-      if (hasErrors && shouldFocusFirstError) {
-        focusFirstError(results, scrollOffset);
-      }
-      return !hasErrors;
+      const commit = () => {
+        const fields = Array.from(fieldsRef.current.values());
+        const results = fields.map((field) => ({
+          isValid: field.validateAfterSubmit(),
+          ref: field.getRef(),
+        }));
+
+        const hasErrors = results.some((result) => !result.isValid);
+
+        fields.forEach((field) => field.commitPendingValidation());
+
+        if (hasErrors && shouldFocusFirstError) {
+          focusFirstError(results, scrollOffset);
+        }
+
+        return !hasErrors;
+      };
+
+      return { isValid, hasErrors, commit };
     },
     [],
   );
@@ -76,7 +93,10 @@ export function Form({
         debounceMs,
       }}
     >
-      <form onSubmit={(e) => onSubmit?.(e, validateForm)} {...props} />
+      <form
+        onSubmit={(event) => onSubmit?.({ event, validateForm })}
+        {...props}
+      />
     </FormContext.Provider>
   );
 }

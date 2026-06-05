@@ -7,21 +7,36 @@ import { Form, useFormContext } from "./form";
 interface RegisteredFieldProps {
   id: string;
   validate: () => Promise<boolean>;
+  validateAfterSubmit?: () => boolean;
   commitPendingValidation: () => void;
 }
 
 function RegisteredField({
   id,
   validate,
+  validateAfterSubmit = () => true,
   commitPendingValidation,
 }: RegisteredFieldProps) {
   const { registerField, deregisterField } = useFormContext();
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    registerField(id, () => ref.current, validate, commitPendingValidation);
+    registerField(
+      id,
+      () => ref.current,
+      validate,
+      validateAfterSubmit,
+      commitPendingValidation,
+    );
     return () => deregisterField(id);
-  }, [commitPendingValidation, id, registerField, deregisterField, validate]);
+  }, [
+    commitPendingValidation,
+    id,
+    registerField,
+    deregisterField,
+    validate,
+    validateAfterSubmit,
+  ]);
 
   return <div ref={ref} data-testid={id} tabIndex={-1} />;
 }
@@ -41,9 +56,14 @@ describe("Form", () => {
     const validateSecond = vi.fn(async () => true);
     const commitFirst = vi.fn();
     const commitSecond = vi.fn();
-    const onSubmit = vi.fn(async (e, validateAllFields) => {
-      e.preventDefault();
-      await validateAllFields();
+    let isValid: boolean | undefined;
+    let hasErrors: boolean | undefined;
+    const onSubmit = vi.fn(async ({ event, validateForm }) => {
+      event.preventDefault();
+      const result = await validateForm();
+      isValid = result.isValid;
+      hasErrors = result.hasErrors;
+      result.commit();
     });
 
     render(
@@ -68,6 +88,8 @@ describe("Form", () => {
       expect(onSubmit).toHaveBeenCalledTimes(1);
       expect(validateFirst).toHaveBeenCalledTimes(1);
       expect(validateSecond).toHaveBeenCalledTimes(1);
+      expect(isValid).toBe(true);
+      expect(hasErrors).toBe(false);
       expect(commitFirst).toHaveBeenCalledTimes(1);
       expect(commitSecond).toHaveBeenCalledTimes(1);
     });
@@ -77,11 +99,14 @@ describe("Form", () => {
     const user = userEvent.setup();
     const validateFirst = vi.fn(async () => false);
     const validateSecond = vi.fn(async () => false);
+    const validateAfterSubmitFirst = vi.fn(() => false);
+    const validateAfterSubmitSecond = vi.fn(() => false);
     const commitFirst = vi.fn();
     const commitSecond = vi.fn();
-    const onSubmit = vi.fn(async (e, validateAllFields) => {
-      e.preventDefault();
-      await validateAllFields();
+    const onSubmit = vi.fn(async ({ event, validateForm }) => {
+      event.preventDefault();
+      const result = await validateForm();
+      result.commit();
     });
 
     render(
@@ -89,11 +114,13 @@ describe("Form", () => {
         <RegisteredField
           id="first-field"
           validate={validateFirst}
+          validateAfterSubmit={validateAfterSubmitFirst}
           commitPendingValidation={commitFirst}
         />
         <RegisteredField
           id="second-field"
           validate={validateSecond}
+          validateAfterSubmit={validateAfterSubmitSecond}
           commitPendingValidation={commitSecond}
         />
         <button type="submit">Submit</button>
@@ -103,6 +130,8 @@ describe("Form", () => {
     await user.click(screen.getByRole("button", { name: "Submit" }));
 
     await waitFor(() => {
+      expect(validateAfterSubmitFirst).toHaveBeenCalledTimes(1);
+      expect(validateAfterSubmitSecond).toHaveBeenCalledTimes(1);
       expect(screen.getByTestId("first-field")).toHaveFocus();
       expect(window.scrollTo).toHaveBeenCalled();
     });
@@ -111,10 +140,12 @@ describe("Form", () => {
   it("should support validateForm options in onSubmit callback", async () => {
     const user = userEvent.setup();
     const validateFirst = vi.fn(async () => false);
+    const validateAfterSubmitFirst = vi.fn(() => false);
     const commitFirst = vi.fn();
-    const onSubmit = vi.fn(async (e, validateAllFields) => {
-      e.preventDefault();
-      await validateAllFields({ focusFirstError: false });
+    const onSubmit = vi.fn(async ({ event, validateForm }) => {
+      event.preventDefault();
+      const result = await validateForm({ focusFirstError: false });
+      result.commit();
     });
 
     render(
@@ -122,6 +153,7 @@ describe("Form", () => {
         <RegisteredField
           id="first-field"
           validate={validateFirst}
+          validateAfterSubmit={validateAfterSubmitFirst}
           commitPendingValidation={commitFirst}
         />
         <button type="submit">Submit</button>
@@ -133,6 +165,7 @@ describe("Form", () => {
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledTimes(1);
       expect(validateFirst).toHaveBeenCalledTimes(1);
+      expect(validateAfterSubmitFirst).toHaveBeenCalledTimes(1);
       expect(commitFirst).toHaveBeenCalledTimes(1);
       expect(window.scrollTo).not.toHaveBeenCalled();
     });
@@ -141,10 +174,12 @@ describe("Form", () => {
   it("should focus current ref after registered field remounts", async () => {
     const user = userEvent.setup();
     const validate = vi.fn(async () => false);
+    const validateAfterSubmit = vi.fn(() => false);
     const commitPendingValidation = vi.fn();
-    const onSubmit = vi.fn(async (e, validateAllFields) => {
-      e.preventDefault();
-      await validateAllFields();
+    const onSubmit = vi.fn(async ({ event, validateForm }) => {
+      event.preventDefault();
+      const result = await validateForm();
+      result.commit();
     });
 
     function SwappingRegisteredField() {
@@ -157,10 +192,17 @@ describe("Form", () => {
           "swapping-field",
           () => ref.current,
           validate,
+          validateAfterSubmit,
           commitPendingValidation,
         );
         return () => deregisterField("swapping-field");
-      }, [registerField, deregisterField, validate, commitPendingValidation]);
+      }, [
+        registerField,
+        deregisterField,
+        validate,
+        validateAfterSubmit,
+        commitPendingValidation,
+      ]);
 
       return (
         <>

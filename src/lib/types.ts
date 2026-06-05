@@ -48,6 +48,11 @@ export interface Validation<T> {
   onSubmit?: SyncValidator<T>;
   /** Asynchronous validator to run when the form is submitted. */
   onSubmitAsync?: AsyncValidator<T>;
+  /** Synchronous validator to run after the form is submitted.
+   *
+   * Runs when `commit` is called on the validation result returned by `validateForm` in the `onSubmit` handler of the form. This is useful for validations that depend on the server response after submission.
+   */
+  afterSubmit?: SyncValidator<T>;
 }
 
 /**
@@ -101,6 +106,7 @@ export interface FormContextValue {
     id: string,
     getRef: () => HTMLElement | null,
     validate: () => Promise<boolean>,
+    validateAfterSubmit: () => boolean,
     commitPendingValidation: () => void,
   ) => void;
   /** Deregisters a field from the form. */
@@ -112,6 +118,7 @@ export type FieldMap = Map<
   {
     getRef: () => HTMLElement | null;
     validate: () => Promise<boolean>;
+    validateAfterSubmit: () => boolean;
     commitPendingValidation: () => void;
   }
 >;
@@ -132,15 +139,8 @@ export interface FormProps extends Omit<
   validationMode?: ValidationMode;
   /** Default debounce delay in milliseconds for async validators. Defaults to `500`. */
   debounceMs?: number;
-  /**
-   * Submit handler called when the form is submitted.
-   * Receives the submit event and a `validateAllFields` function that triggers
-   * validation on all registered fields and returns whether the form is valid.
-   */
-  onSubmit?: (
-    e: React.SubmitEvent<HTMLFormElement>,
-    validateForm: (options?: ValidateFormOptions) => Promise<boolean>,
-  ) => void;
+  /** Callback invoked when the form is submitted. Receives the submit event and a `validateForm` function that can be used to trigger validation on all registered fields and focus the first invalid field. */
+  onSubmit?: (context: SubmitContext) => void;
 }
 
 export type DependencyValidationHook =
@@ -152,3 +152,15 @@ export type DependencyValidationHook =
 export type DependenciesByHook = Partial<
   Record<DependencyValidationHook, readonly unknown[]>
 >;
+
+export type ValidationResult = {
+  isValid: boolean;
+  hasErrors: boolean;
+  /** Runs `afterSubmit` validations and commits the validation result, updating the form state and focusing the first invalid field if necessary. Returns `true` if the form is valid, `false` otherwise. */
+  commit: () => boolean;
+};
+
+export type SubmitContext = {
+  event: React.SubmitEvent<HTMLFormElement>;
+  validateForm: (options?: ValidateFormOptions) => Promise<ValidationResult>;
+};

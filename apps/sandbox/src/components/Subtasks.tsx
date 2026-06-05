@@ -1,10 +1,10 @@
+import { initialFormData } from "@/lib/utils";
 import { validateSubtask } from "@/lib/validation";
 import { createFieldState, Field } from "@fransek/form";
 import { Button } from "@fransek/ui/button";
 import { Input } from "@fransek/ui/input";
 import { Plus, Trash } from "lucide-react";
 import { useRef } from "react";
-import { initialFormData } from "./FormExample";
 
 interface SubtasksProps {
   formData: typeof initialFormData;

@@ -1,6 +1,7 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import { priorities } from "@/lib/options";
+import { cn, initialFormData } from "@/lib/utils";
 import {
   dateFormat,
   validateAssignee,
@@ -8,10 +9,11 @@ import {
   validatePriority,
   validateStartDate,
   validateSummary,
+  validateSummaryAfterSubmit,
   validateSummaryAsync,
   validateType,
 } from "@/lib/validation";
-import { createFieldState, Field, FieldState, Form } from "@fransek/form";
+import { Field, Form } from "@fransek/form";
 import {
   Checkbox,
   CheckboxGroup,
@@ -26,42 +28,30 @@ import { Button } from "@fransek/ui/button";
 import { Input } from "@fransek/ui/input";
 import { Select } from "@fransek/ui/select";
 import { Textarea } from "@fransek/ui/textarea";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { ServerResponse, submitForm } from "../lib/server-simulator";
 import { Subtasks } from "./Subtasks";
-
-export const priorities = [
-  { value: "low", label: "Low", className: "bg-success-foreground" },
-  { value: "medium", label: "Medium", className: "bg-warning-foreground" },
-  { value: "high", label: "High", className: "bg-error-foreground" },
-] as const;
-
-export const initialFormData = {
-  summary: createFieldState(""),
-  description: createFieldState(""),
-  type: createFieldState<string | null>(null),
-  priority: createFieldState<string | null>(null),
-  startDate: createFieldState(""),
-  dueDate: createFieldState(""),
-  assignees: createFieldState<string[]>([]),
-  subtasks: [] as { state: FieldState<string>; id: number }[],
-  createAnother: createFieldState(false),
-};
 
 export function FormExample() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState(initialFormData);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const responseRef = useRef<ServerResponse | null>(null);
 
   return (
     <Form
       className="mx-2 flex flex-col gap-4 rounded-lg border p-6"
-      onSubmit={async (e, validateForm) => {
-        e.preventDefault();
+      onSubmit={async ({ event, validateForm }) => {
+        event.preventDefault();
         setIsSubmitting(true);
-        const isValid = await validateForm();
+        const { isValid, commit } = await validateForm();
         if (isValid) {
-          setDialogOpen(true);
+          responseRef.current = await submitForm(formData);
+          if (responseRef.current.ok) {
+            setDialogOpen(true);
+          }
         }
+        commit();
         setIsSubmitting(false);
       }}
       onReset={() => setFormData(initialFormData)}
@@ -74,6 +64,7 @@ export function FormExample() {
         validation={{
           onChange: validateSummary,
           onChangeAsync: validateSummaryAsync,
+          afterSubmit: () => validateSummaryAfterSubmit(responseRef.current),
         }}
       >
         {(props) => (

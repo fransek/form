@@ -796,6 +796,7 @@ describe("Field", () => {
     const renderWithFormContext = (validation?: Validation<string>) => {
       const registrations: {
         validate?: () => Promise<boolean>;
+        validateAfterSubmit?: () => boolean;
         commitPendingValidation?: () => void;
       } = {};
       const onChangeSpy = vi.fn();
@@ -804,12 +805,20 @@ describe("Field", () => {
         return (
           <FormContext.Provider
             value={{
-              registerField: (_id, _ref, validate, commitPendingValidation) => {
+              registerField: (
+                _id,
+                _ref,
+                validate,
+                validateAfterSubmit,
+                commitPendingValidation,
+              ) => {
                 registrations.validate = validate;
+                registrations.validateAfterSubmit = validateAfterSubmit;
                 registrations.commitPendingValidation = commitPendingValidation;
               },
               deregisterField: () => {
                 registrations.validate = undefined;
+                registrations.validateAfterSubmit = undefined;
                 registrations.commitPendingValidation = undefined;
               },
               validationMode: "touchedAndDirty",

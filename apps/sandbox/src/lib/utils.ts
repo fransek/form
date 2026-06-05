@@ -1,22 +1,30 @@
+import { FieldState, createFieldState } from "@fransek/form";
 import { clsx, type ClassValue } from "clsx";
-import { useId } from "react";
 import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
+export type FormData = {
+  summary: FieldState<string>;
+  description: FieldState<string>;
+  type: FieldState<string | null>;
+  priority: FieldState<string | null>;
+  startDate: FieldState<string>;
+  dueDate: FieldState<string>;
+  assignees: FieldState<string[]>;
+  subtasks: { state: FieldState<string>; id: number }[];
+  createAnother: FieldState<boolean>;
+};
 
-export function useFieldId(id?: string) {
-  const reactId = useId();
-  const uid = id ?? reactId;
-  const errorId = `${uid}-error`;
-  const labelId = `${uid}-label`;
-  return { id: uid, errorId, labelId };
-}
-
-export interface FieldProps {
-  label?: string;
-  errorMessage?: React.ReactNode;
-  isValidating?: boolean;
-  isValidatingMessage?: React.ReactNode;
-}
+export const initialFormData: FormData = {
+  summary: createFieldState(""),
+  description: createFieldState(""),
+  type: createFieldState(null),
+  priority: createFieldState(null),
+  startDate: createFieldState(""),
+  dueDate: createFieldState(""),
+  assignees: createFieldState([]),
+  subtasks: [],
+  createAnother: createFieldState(false),
+};

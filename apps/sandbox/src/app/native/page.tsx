@@ -16,8 +16,8 @@ export default function Page() {
   const [formData, setFormData] = useState(initialFormData);
   return (
     <Form
-      onSubmit={async (e, validateForm) => {
-        e.preventDefault();
+      onSubmit={async ({ event, validateForm }) => {
+        event.preventDefault();
         const isValid = await validateForm();
         if (isValid) {
           alert("Form submitted successfully!");
