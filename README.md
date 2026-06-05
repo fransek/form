@@ -37,9 +37,9 @@ export function MyForm() {
 
   return (
     <Form
-      onSubmit={async (e, validateForm) => {
-        e.preventDefault();
-        if (await validateForm()) {
+      onSubmit={async ({ event, validate }) => {
+        event.preventDefault();
+        if (await validate()) {
           console.log("submitted:", name.value);
         }
       }}
@@ -182,17 +182,18 @@ In this example, changing `password` reruns the repeat-password check.
 
 ```tsx
 <Form
-  onSubmit={async (e, validateForm) => {
-    e.preventDefault();
-    const isValid = await validateForm({ focusFirstError: true, scrollOffset: 100 });
+  onSubmit={async ({ event, validate, commit }) => {
+    event.preventDefault();
+    const isValid = await validate({ focusFirstError: true, scrollOffset: 100 });
     if (isValid) { /* ... */ }
+    commit();
   }}
   validationMode="touchedAndDirty" // default for all fields
   debounceMs={500}                  // default async debounce for all fields
 >
 ```
 
-`validateForm` runs every registered field's validators, commits the results, and optionally focuses the first invalid field.
+`validate` runs every registered field's submit validators and returns whether they pass. `commit` then applies pending validation state updates, runs `onCommit` validators, and optionally focuses the first invalid field.
 
 ## Render Props
 
