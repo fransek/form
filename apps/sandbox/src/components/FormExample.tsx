@@ -41,10 +41,10 @@ export function FormExample() {
   return (
     <Form
       className="mx-2 flex flex-col gap-4 rounded-lg border p-6"
-      onSubmit={async ({ event, validateForm }) => {
+      onSubmit={async ({ event, validate, commit }) => {
         event.preventDefault();
         setIsSubmitting(true);
-        const { isValid, commit } = await validateForm();
+        const isValid = await validate();
         if (isValid) {
           responseRef.current = await submitForm(formData);
           if (responseRef.current.ok) {
@@ -64,7 +64,7 @@ export function FormExample() {
         validation={{
           onChange: validateSummary,
           onChangeAsync: validateSummaryAsync,
-          afterSubmit: () => validateSummaryAfterSubmit(responseRef.current),
+          onCommit: () => validateSummaryAfterSubmit(responseRef.current),
         }}
       >
         {(props) => (

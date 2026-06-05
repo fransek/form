@@ -101,11 +101,11 @@ export function Field<T>(props: FieldProps<T>) {
       return pendingValidationRef.current.isValid;
     }
 
-    function afterSubmitValidation() {
+    function onCommitValidation() {
       if (pendingValidationRef.current?.isValid) {
         pendingValidationRef.current = validate(
           stateRef.current,
-          validation?.afterSubmit,
+          validation?.onCommit,
         );
       }
       return pendingValidationRef.current?.isValid ?? true;
@@ -122,7 +122,7 @@ export function Field<T>(props: FieldProps<T>) {
       id,
       () => fieldRef.current,
       performValidation,
-      afterSubmitValidation,
+      onCommitValidation,
       commitPendingValidation,
     );
 

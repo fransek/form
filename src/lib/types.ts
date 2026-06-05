@@ -48,11 +48,12 @@ export interface Validation<T> {
   onSubmit?: SyncValidator<T>;
   /** Asynchronous validator to run when the form is submitted. */
   onSubmitAsync?: AsyncValidator<T>;
-  /** Synchronous validator to run after the form is submitted.
+  /** Synchronous validator to run when submit-time validation is committed.
    *
-   * Runs when `commit` is called on the validation result returned by `validateForm` in the `onSubmit` handler of the form. This is useful for validations that depend on the server response after submission.
+   * Runs when `commit` is called from `SubmitContext` in the `onSubmit` handler.
+   * Useful for validations that depend on a submission response.
    */
-  afterSubmit?: SyncValidator<T>;
+  onCommit?: SyncValidator<T>;
 }
 
 /**
@@ -106,7 +107,7 @@ export interface FormContextValue {
     id: string,
     getRef: () => HTMLElement | null,
     validate: () => Promise<boolean>,
-    validateAfterSubmit: () => boolean,
+    validateOnCommit: () => boolean,
     commitPendingValidation: () => void,
   ) => void;
   /** Deregisters a field from the form. */
@@ -118,12 +119,12 @@ export type FieldMap = Map<
   {
     getRef: () => HTMLElement | null;
     validate: () => Promise<boolean>;
-    validateAfterSubmit: () => boolean;
+    validateOnCommit: () => boolean;
     commitPendingValidation: () => void;
   }
 >;
 
-export interface ValidateFormOptions {
+export interface CommitOptions {
   /** If `true`, the first invalid field will be focused after validation. Defaults to `true`. */
   focusFirstError?: boolean;
   /** Additional offset in pixels to apply when scrolling to the first error. Defaults to `100`. */
@@ -139,7 +140,7 @@ export interface FormProps extends Omit<
   validationMode?: ValidationMode;
   /** Default debounce delay in milliseconds for async validators. Defaults to `500`. */
   debounceMs?: number;
-  /** Callback invoked when the form is submitted. Receives the submit event and a `validateForm` function that can be used to trigger validation on all registered fields and focus the first invalid field. */
+  /** Callback invoked when the form is submitted. */
   onSubmit?: (context: SubmitContext) => void;
 }
 
@@ -153,14 +154,10 @@ export type DependenciesByHook = Partial<
   Record<DependencyValidationHook, readonly unknown[]>
 >;
 
-export type ValidationResult = {
-  isValid: boolean;
-  hasErrors: boolean;
-  /** Runs `afterSubmit` validations and commits the validation result, updating the form state and focusing the first invalid field if necessary. Returns `true` if the form is valid, `false` otherwise. */
-  commit: () => boolean;
-};
-
 export type SubmitContext = {
   event: React.SubmitEvent<HTMLFormElement>;
-  validateForm: (options?: ValidateFormOptions) => Promise<ValidationResult>;
+  /** Runs submit-time validation for all registered fields. */
+  validate: () => Promise<boolean>;
+  /** Runs `onCommit` validations and commits pending validation state changes. */
+  commit: (options?: CommitOptions) => boolean;
 };
