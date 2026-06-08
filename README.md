@@ -185,18 +185,17 @@ In this example, changing `password` reruns the repeat-password check.
 <Form
   onSubmit={async ({ event, validate, commit }) => {
     event.preventDefault();
-    const isValid = await validate({
-      skip: ["onChangeAsync", "onBlurAsync"],
-    });
+    const isValid = await validate();
     if (isValid) { /* ... */ }
     commit({ focusFirstError: true, scrollOffset: 100 });
   }}
   validationMode="touchedAndDirty" // default for all fields
   debounceMs={500}                  // default async debounce for all fields
+  skipAsyncValidationOnSubmit       // optional default for all fields
 >
 ```
 
-`validate` runs every registered field's `onChange`, `onBlur`, and `onSubmit` validators and returns whether they pass. Pass `skip` to omit specific hooks (`"onChange"`, `"onChangeAsync"`, `"onBlur"`, `"onBlurAsync"`, `"onSubmit"`, `"onSubmitAsync"`) when submitting, for example to avoid redundant async lookups that the server validates again. `commit` then applies pending validation state updates, runs `onCommit` validators, and optionally focuses the first invalid field.
+`validate` runs every registered field's `onChange`, `onBlur`, and `onSubmit` validators and returns whether they pass. By default it also runs `onChangeAsync` and `onBlurAsync`; set `skipAsyncValidationOnSubmit` on `<Form>` (default for all fields) or on a specific `<Field>` to skip those two async hooks during submit validation. `onSubmitAsync` still runs. `commit` then applies pending validation state updates, runs `onCommit` validators, and optionally focuses the first invalid field.
 
 ## Render Props
 

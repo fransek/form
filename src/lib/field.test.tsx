@@ -16,7 +16,7 @@ import {
   setupTest,
   specificValueValidator,
 } from "./test/test-utils";
-import { SubmitValidationOptions, Validation } from "./types";
+import { Validation } from "./types";
 
 describe("Field", () => {
   afterEach(() => {
@@ -793,9 +793,13 @@ describe("Field", () => {
   });
 
   describe("form registration", () => {
-    const renderWithFormContext = (validation?: Validation<string>) => {
+    const renderWithFormContext = (
+      validation?: Validation<string>,
+      skipAsyncValidationOnSubmit?: boolean,
+      fieldSkipAsyncValidationOnSubmit?: boolean,
+    ) => {
       const registrations: {
-        validate?: (options?: SubmitValidationOptions) => Promise<boolean>;
+        validate?: () => Promise<boolean>;
         validateOnCommit?: () => boolean;
         commitPendingValidation?: () => void;
       } = {};
@@ -823,6 +827,7 @@ describe("Field", () => {
               },
               validationMode: "touchedAndDirty",
               debounceMs: 0,
+              skipAsyncValidationOnSubmit,
             }}
           >
             <Field<string>
@@ -833,6 +838,7 @@ describe("Field", () => {
               }}
               validation={validation}
               debounceMs={0}
+              skipAsyncValidationOnSubmit={fieldSkipAsyncValidationOnSubmit}
             >
               {({ handleChange, handleBlur, ref, value }) => (
                 <input
@@ -916,29 +922,98 @@ describe("Field", () => {
       expect(committedState.isValid).toBe(false);
     });
 
-    it("should skip selected validators during submit validation", async () => {
+    it("should run onChangeAsync and onBlurAsync during submit validation by default", async () => {
       const onChangeAsync = vi.fn(async () => "Change async error");
-      const onSubmit = vi.fn(() => "Submit error");
+      const onBlurAsync = vi.fn(async () => "Blur async error");
+      const onSubmit = vi.fn(() => undefined);
+      const onSubmitAsync = vi.fn(async () => "Submit async error");
       const { input, user, registrations } = renderWithFormContext({
         onChangeAsync,
+        onBlurAsync,
         onSubmit,
+        onSubmitAsync,
       });
 
       await user.type(input, "abc");
       await user.tab();
       onChangeAsync.mockClear();
+      onBlurAsync.mockClear();
       onSubmit.mockClear();
+      onSubmitAsync.mockClear();
 
       let isValid: boolean | undefined;
       await act(async () => {
-        isValid = await registrations.validate!({
-          skip: ["onChangeAsync", "onSubmit"],
-        });
+        isValid = await registrations.validate!();
+      });
+
+      expect(isValid).toBe(false);
+      expect(onChangeAsync).toHaveBeenCalledTimes(1);
+      expect(onBlurAsync).toHaveBeenCalledTimes(1);
+      expect(onSubmit).toHaveBeenCalledTimes(1);
+      expect(onSubmitAsync).toHaveBeenCalledTimes(1);
+    });
+
+    it("should skip onChangeAsync and onBlurAsync during submit validation when field option is enabled", async () => {
+      const onChangeAsync = vi.fn(async () => "Change async error");
+      const onBlurAsync = vi.fn(async () => "Blur async error");
+      const onSubmitAsync = vi.fn(async () => undefined);
+      const { input, user, registrations } = renderWithFormContext(
+        {
+          onChangeAsync,
+          onBlurAsync,
+          onSubmit: () => undefined,
+          onSubmitAsync,
+        },
+        undefined,
+        true,
+      );
+
+      await user.type(input, "abc");
+      await user.tab();
+      onChangeAsync.mockClear();
+      onBlurAsync.mockClear();
+      onSubmitAsync.mockClear();
+
+      let isValid: boolean | undefined;
+      await act(async () => {
+        isValid = await registrations.validate!();
       });
 
       expect(isValid).toBe(true);
       expect(onChangeAsync).not.toHaveBeenCalled();
-      expect(onSubmit).not.toHaveBeenCalled();
+      expect(onBlurAsync).not.toHaveBeenCalled();
+      expect(onSubmitAsync).toHaveBeenCalledTimes(1);
+    });
+
+    it("should skip onChangeAsync and onBlurAsync during submit validation when form default is enabled", async () => {
+      const onChangeAsync = vi.fn(async () => "Change async error");
+      const onBlurAsync = vi.fn(async () => "Blur async error");
+      const onSubmitAsync = vi.fn(async () => undefined);
+      const { input, user, registrations } = renderWithFormContext(
+        {
+          onChangeAsync,
+          onBlurAsync,
+          onSubmit: () => undefined,
+          onSubmitAsync,
+        },
+        true,
+      );
+
+      await user.type(input, "abc");
+      await user.tab();
+      onChangeAsync.mockClear();
+      onBlurAsync.mockClear();
+      onSubmitAsync.mockClear();
+
+      let isValid: boolean | undefined;
+      await act(async () => {
+        isValid = await registrations.validate!();
+      });
+
+      expect(isValid).toBe(true);
+      expect(onChangeAsync).not.toHaveBeenCalled();
+      expect(onBlurAsync).not.toHaveBeenCalled();
+      expect(onSubmitAsync).toHaveBeenCalledTimes(1);
     });
 
     it("should only run onCommit during commit and apply its result", async () => {

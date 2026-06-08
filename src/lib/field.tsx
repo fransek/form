@@ -12,8 +12,6 @@ import {
   DependencyValidationHook,
   FieldProps,
   FieldState,
-  SubmitValidationHook,
-  SubmitValidationOptions,
 } from "./types";
 
 /**
@@ -28,6 +26,7 @@ export function Field<T>(props: FieldProps<T>) {
     deregisterField,
     validationMode: formValidationMode,
     debounceMs: formDebounceMs,
+    skipAsyncValidationOnSubmit: formSkipAsyncValidationOnSubmit,
   } = useFormContext();
 
   const {
@@ -39,6 +38,7 @@ export function Field<T>(props: FieldProps<T>) {
     validation,
     debounceMs = formDebounceMs || 500,
     validationMode = formValidationMode || "touchedAndDirty",
+    skipAsyncValidationOnSubmit = formSkipAsyncValidationOnSubmit || false,
   } = props;
 
   const stateRef = useRef(state);
@@ -86,26 +86,18 @@ export function Field<T>(props: FieldProps<T>) {
       (validationMode === "touchedAndDirty" && stateRef.current.isDirty));
 
   useEffect(() => {
-    async function performValidation(options: SubmitValidationOptions = {}) {
-      const { skip = [] } = options;
-      const shouldRunHook = (hook: SubmitValidationHook) =>
-        !skip.includes(hook);
-
+    async function performValidation() {
       validationIdRef.current++;
       pendingValidationRef.current = validate(stateRef.current, [
-        shouldRunHook("onChange") ? validation?.onChange : undefined,
-        shouldRunHook("onBlur") ? validation?.onBlur : undefined,
-        shouldRunHook("onSubmit") ? validation?.onSubmit : undefined,
+        validation?.onChange,
+        validation?.onBlur,
+        validation?.onSubmit,
       ]);
       if (pendingValidationRef.current.isValid) {
         pendingValidationRef.current = await validateAsync(stateRef.current, [
-          shouldRunHook("onChangeAsync")
-            ? validation?.onChangeAsync
-            : undefined,
-          shouldRunHook("onBlurAsync") ? validation?.onBlurAsync : undefined,
-          shouldRunHook("onSubmitAsync")
-            ? validation?.onSubmitAsync
-            : undefined,
+          skipAsyncValidationOnSubmit ? undefined : validation?.onChangeAsync,
+          skipAsyncValidationOnSubmit ? undefined : validation?.onBlurAsync,
+          validation?.onSubmitAsync,
         ]);
       }
       return pendingValidationRef.current.isValid;
@@ -139,7 +131,14 @@ export function Field<T>(props: FieldProps<T>) {
     return () => {
       deregisterField(id);
     };
-  }, [id, registerField, validation, onChange, deregisterField]);
+  }, [
+    id,
+    registerField,
+    validation,
+    onChange,
+    deregisterField,
+    skipAsyncValidationOnSubmit,
+  ]);
 
   useEffect(() => {
     async function runDependencyValidation(

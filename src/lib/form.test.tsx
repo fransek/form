@@ -3,11 +3,10 @@ import userEvent from "@testing-library/user-event";
 import React, { useEffect, useRef, useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Form, useFormContext } from "./form";
-import { SubmitValidationOptions } from "./types";
 
 interface RegisteredFieldProps {
   id: string;
-  validate: (options?: SubmitValidationOptions) => Promise<boolean>;
+  validate: () => Promise<boolean>;
   validateOnCommit?: () => boolean;
   commitPendingValidation: () => void;
 }
@@ -168,13 +167,13 @@ describe("Form", () => {
     });
   });
 
-  it("should forward submit validation options to registered fields", async () => {
+  it("should call registered field validation without submit options", async () => {
     const user = userEvent.setup();
     const validateFirst = vi.fn(async () => true);
     const validateSecond = vi.fn(async () => true);
     const onSubmit = vi.fn(async ({ event, validate }) => {
       event.preventDefault();
-      await validate({ skip: ["onChangeAsync", "onBlurAsync"] });
+      await validate();
     });
 
     render(
@@ -197,12 +196,8 @@ describe("Form", () => {
 
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledTimes(1);
-      expect(validateFirst).toHaveBeenCalledWith({
-        skip: ["onChangeAsync", "onBlurAsync"],
-      });
-      expect(validateSecond).toHaveBeenCalledWith({
-        skip: ["onChangeAsync", "onBlurAsync"],
-      });
+      expect(validateFirst).toHaveBeenCalledWith();
+      expect(validateSecond).toHaveBeenCalledWith();
     });
   });
 

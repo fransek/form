@@ -88,6 +88,8 @@ export interface FieldProps<T> {
   validationMode?: ValidationMode;
   /** Debounce delay in milliseconds for async validators. Overrides the value set on the parent {@link Form}. Defaults to `500`. */
   debounceMs?: number;
+  /** If `true`, submit-time validation skips `onChangeAsync` and `onBlurAsync` for this field. */
+  skipAsyncValidationOnSubmit?: boolean;
 }
 
 /** A synchronous validator function. Returns an error message if validation fails, or a falsy value if it passes. */
@@ -102,11 +104,13 @@ export interface FormContextValue {
   validationMode?: ValidationMode;
   /** Default debounce delay in milliseconds for async validators. */
   debounceMs?: number;
+  /** Default submit-time async-skip behavior applied to all fields. */
+  skipAsyncValidationOnSubmit?: boolean;
   /** Registers a field with the form for submit validation. */
   registerField: (
     id: string,
     getRef: () => HTMLElement | null,
-    validate: (options?: SubmitValidationOptions) => Promise<boolean>,
+    validate: () => Promise<boolean>,
     validateOnCommit: () => boolean,
     commitPendingValidation: () => void,
   ) => void;
@@ -118,7 +122,7 @@ export type FieldMap = Map<
   string,
   {
     getRef: () => HTMLElement | null;
-    validate: (options?: SubmitValidationOptions) => Promise<boolean>;
+    validate: () => Promise<boolean>;
     validateOnCommit: () => boolean;
     commitPendingValidation: () => void;
   }
@@ -131,19 +135,6 @@ export interface CommitOptions {
   scrollOffset?: number;
 }
 
-export type SubmitValidationHook =
-  | "onChange"
-  | "onChangeAsync"
-  | "onBlur"
-  | "onBlurAsync"
-  | "onSubmit"
-  | "onSubmitAsync";
-
-export interface SubmitValidationOptions {
-  /** Validation hooks to skip when running submit-time validation. */
-  skip?: readonly SubmitValidationHook[];
-}
-
 /** Props for the {@link Form} component. */
 export interface FormProps extends Omit<
   React.ComponentProps<"form">,
@@ -153,6 +144,8 @@ export interface FormProps extends Omit<
   validationMode?: ValidationMode;
   /** Default debounce delay in milliseconds for async validators. Defaults to `500`. */
   debounceMs?: number;
+  /** If `true`, submit-time validation skips `onChangeAsync` and `onBlurAsync` by default for all fields. */
+  skipAsyncValidationOnSubmit?: boolean;
   /** Callback invoked when the form is submitted. */
   onSubmit?: (context: SubmitContext) => void;
 }
@@ -170,7 +163,7 @@ export type DependenciesByHook = Partial<
 export type SubmitContext = {
   event: React.SubmitEvent<HTMLFormElement>;
   /** Runs submit-time validation for all registered fields. */
-  validate: (options?: SubmitValidationOptions) => Promise<boolean>;
+  validate: () => Promise<boolean>;
   /** Runs `onCommit` validations and commits pending validation state changes. */
   commit: (options?: CommitOptions) => boolean;
 };

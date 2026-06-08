@@ -7,8 +7,6 @@ export type {
   FieldRenderProps,
   FieldState,
   FormProps,
-  SubmitValidationHook,
-  SubmitValidationOptions,
   SyncValidator,
   Validation,
   ValidationMode,

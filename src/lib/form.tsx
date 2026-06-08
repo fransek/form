@@ -1,12 +1,6 @@
 import React, { useCallback, useRef } from "react";
 import { focusFirstError } from "./focus-first-error";
-import {
-  CommitOptions,
-  FieldMap,
-  FormContextValue,
-  FormProps,
-  SubmitValidationOptions,
-} from "./types";
+import { CommitOptions, FieldMap, FormContextValue, FormProps } from "./types";
 
 /**
  * A form component that provides context for coordinating field validation.
@@ -19,6 +13,7 @@ export function Form({
   onSubmit,
   validationMode,
   debounceMs,
+  skipAsyncValidationOnSubmit,
   ...props
 }: FormProps) {
   const fieldsRef = useRef<FieldMap>(new Map());
@@ -45,9 +40,9 @@ export function Form({
     fieldsRef.current.delete(id);
   }, []);
 
-  const validate = useCallback(async (options?: SubmitValidationOptions) => {
+  const validate = useCallback(async () => {
     const fields = Array.from(fieldsRef.current.values());
-    const validationPromises = fields.map((field) => field.validate(options));
+    const validationPromises = fields.map((field) => field.validate());
     const results = await Promise.all(validationPromises);
     return results.every(Boolean);
   }, []);
@@ -82,6 +77,7 @@ export function Form({
         deregisterField,
         validationMode,
         debounceMs,
+        skipAsyncValidationOnSubmit,
       }}
     >
       <form
