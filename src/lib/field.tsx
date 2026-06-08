@@ -12,6 +12,8 @@ import {
   DependencyValidationHook,
   FieldProps,
   FieldState,
+  SubmitValidationHook,
+  SubmitValidationOptions,
 } from "./types";
 
 /**
@@ -84,18 +86,26 @@ export function Field<T>(props: FieldProps<T>) {
       (validationMode === "touchedAndDirty" && stateRef.current.isDirty));
 
   useEffect(() => {
-    async function performValidation() {
+    async function performValidation(options: SubmitValidationOptions = {}) {
+      const { skip = [] } = options;
+      const shouldRunHook = (hook: SubmitValidationHook) =>
+        !skip.includes(hook);
+
       validationIdRef.current++;
       pendingValidationRef.current = validate(stateRef.current, [
-        validation?.onChange,
-        validation?.onBlur,
-        validation?.onSubmit,
+        shouldRunHook("onChange") ? validation?.onChange : undefined,
+        shouldRunHook("onBlur") ? validation?.onBlur : undefined,
+        shouldRunHook("onSubmit") ? validation?.onSubmit : undefined,
       ]);
       if (pendingValidationRef.current.isValid) {
         pendingValidationRef.current = await validateAsync(stateRef.current, [
-          validation?.onChangeAsync,
-          validation?.onBlurAsync,
-          validation?.onSubmitAsync,
+          shouldRunHook("onChangeAsync")
+            ? validation?.onChangeAsync
+            : undefined,
+          shouldRunHook("onBlurAsync") ? validation?.onBlurAsync : undefined,
+          shouldRunHook("onSubmitAsync")
+            ? validation?.onSubmitAsync
+            : undefined,
         ]);
       }
       return pendingValidationRef.current.isValid;

@@ -16,7 +16,7 @@ import {
   setupTest,
   specificValueValidator,
 } from "./test/test-utils";
-import { Validation } from "./types";
+import { SubmitValidationOptions, Validation } from "./types";
 
 describe("Field", () => {
   afterEach(() => {
@@ -795,7 +795,7 @@ describe("Field", () => {
   describe("form registration", () => {
     const renderWithFormContext = (validation?: Validation<string>) => {
       const registrations: {
-        validate?: () => Promise<boolean>;
+        validate?: (options?: SubmitValidationOptions) => Promise<boolean>;
         validateOnCommit?: () => boolean;
         commitPendingValidation?: () => void;
       } = {};
@@ -914,6 +914,31 @@ describe("Field", () => {
         onChangeSpy.mock.calls[onChangeSpy.mock.calls.length - 1][0];
       expect(committedState.errorMessage).toBe("Submit async error");
       expect(committedState.isValid).toBe(false);
+    });
+
+    it("should skip selected validators during submit validation", async () => {
+      const onChangeAsync = vi.fn(async () => "Change async error");
+      const onSubmit = vi.fn(() => "Submit error");
+      const { input, user, registrations } = renderWithFormContext({
+        onChangeAsync,
+        onSubmit,
+      });
+
+      await user.type(input, "abc");
+      await user.tab();
+      onChangeAsync.mockClear();
+      onSubmit.mockClear();
+
+      let isValid: boolean | undefined;
+      await act(async () => {
+        isValid = await registrations.validate!({
+          skip: ["onChangeAsync", "onSubmit"],
+        });
+      });
+
+      expect(isValid).toBe(true);
+      expect(onChangeAsync).not.toHaveBeenCalled();
+      expect(onSubmit).not.toHaveBeenCalled();
     });
 
     it("should only run onCommit during commit and apply its result", async () => {

@@ -106,7 +106,7 @@ export interface FormContextValue {
   registerField: (
     id: string,
     getRef: () => HTMLElement | null,
-    validate: () => Promise<boolean>,
+    validate: (options?: SubmitValidationOptions) => Promise<boolean>,
     validateOnCommit: () => boolean,
     commitPendingValidation: () => void,
   ) => void;
@@ -118,7 +118,7 @@ export type FieldMap = Map<
   string,
   {
     getRef: () => HTMLElement | null;
-    validate: () => Promise<boolean>;
+    validate: (options?: SubmitValidationOptions) => Promise<boolean>;
     validateOnCommit: () => boolean;
     commitPendingValidation: () => void;
   }
@@ -129,6 +129,19 @@ export interface CommitOptions {
   focusFirstError?: boolean;
   /** Additional offset in pixels to apply when scrolling to the first error. Defaults to `100`. */
   scrollOffset?: number;
+}
+
+export type SubmitValidationHook =
+  | "onChange"
+  | "onChangeAsync"
+  | "onBlur"
+  | "onBlurAsync"
+  | "onSubmit"
+  | "onSubmitAsync";
+
+export interface SubmitValidationOptions {
+  /** Validation hooks to skip when running submit-time validation. */
+  skip?: readonly SubmitValidationHook[];
 }
 
 /** Props for the {@link Form} component. */
@@ -157,7 +170,7 @@ export type DependenciesByHook = Partial<
 export type SubmitContext = {
   event: React.SubmitEvent<HTMLFormElement>;
   /** Runs submit-time validation for all registered fields. */
-  validate: () => Promise<boolean>;
+  validate: (options?: SubmitValidationOptions) => Promise<boolean>;
   /** Runs `onCommit` validations and commits pending validation state changes. */
   commit: (options?: CommitOptions) => boolean;
 };

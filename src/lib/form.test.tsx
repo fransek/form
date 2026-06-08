@@ -3,10 +3,11 @@ import userEvent from "@testing-library/user-event";
 import React, { useEffect, useRef, useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Form, useFormContext } from "./form";
+import { SubmitValidationOptions } from "./types";
 
 interface RegisteredFieldProps {
   id: string;
-  validate: () => Promise<boolean>;
+  validate: (options?: SubmitValidationOptions) => Promise<boolean>;
   validateOnCommit?: () => boolean;
   commitPendingValidation: () => void;
 }
@@ -164,6 +165,44 @@ describe("Form", () => {
       expect(validateOnCommitFirst).toHaveBeenCalledTimes(1);
       expect(commitFirst).toHaveBeenCalledTimes(1);
       expect(window.scrollTo).not.toHaveBeenCalled();
+    });
+  });
+
+  it("should forward submit validation options to registered fields", async () => {
+    const user = userEvent.setup();
+    const validateFirst = vi.fn(async () => true);
+    const validateSecond = vi.fn(async () => true);
+    const onSubmit = vi.fn(async ({ event, validate }) => {
+      event.preventDefault();
+      await validate({ skip: ["onChangeAsync", "onBlurAsync"] });
+    });
+
+    render(
+      <Form onSubmit={onSubmit}>
+        <RegisteredField
+          id="first-field"
+          validate={validateFirst}
+          commitPendingValidation={vi.fn()}
+        />
+        <RegisteredField
+          id="second-field"
+          validate={validateSecond}
+          commitPendingValidation={vi.fn()}
+        />
+        <button type="submit">Submit</button>
+      </Form>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Submit" }));
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledTimes(1);
+      expect(validateFirst).toHaveBeenCalledWith({
+        skip: ["onChangeAsync", "onBlurAsync"],
+      });
+      expect(validateSecond).toHaveBeenCalledWith({
+        skip: ["onChangeAsync", "onBlurAsync"],
+      });
     });
   });
 
