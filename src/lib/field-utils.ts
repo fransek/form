@@ -69,3 +69,25 @@ export async function getAsyncValidationError<T>(
   );
   return errors.find(Boolean);
 }
+
+export function getSyncValidators<T>(
+  changedHooks: DependencyValidationHook[],
+  validation: Validation<T> | undefined,
+) {
+  return [
+    changedHooks.includes("onChange") ? validation?.onChange : undefined,
+    changedHooks.includes("onBlur") ? validation?.onBlur : undefined,
+  ];
+}
+
+export function getAsyncValidators<T>(
+  changedHooks: DependencyValidationHook[],
+  validation: Validation<T> | undefined,
+) {
+  return [
+    changedHooks.includes("onChangeAsync")
+      ? validation?.onChangeAsync
+      : undefined,
+    changedHooks.includes("onBlurAsync") ? validation?.onBlurAsync : undefined,
+  ];
+}
