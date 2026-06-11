@@ -65,6 +65,10 @@ export function Field<T>(props: FieldProps<T>) {
   const fieldRef = useRef<HTMLElement | null>(null);
   const id = useId();
 
+  function updateState(overrides: Partial<FieldState<T>>) {
+    onChange({ ...stateRef.current, ...overrides });
+  }
+
   useEffect(() => {
     async function performValidation() {
       validationIdRef.current++;
@@ -88,7 +92,7 @@ export function Field<T>(props: FieldProps<T>) {
 
     function commitPendingValidation() {
       if (pendingValidationRef.current) {
-        onChange(pendingValidationRef.current);
+        updateState(pendingValidationRef.current);
         pendingValidationRef.current = null;
       }
     }
@@ -108,7 +112,7 @@ export function Field<T>(props: FieldProps<T>) {
     id,
     registerField,
     validation,
-    onChange,
+    updateState,
     deregisterField,
     skipAsyncValidationOnSubmit,
   ]);
@@ -155,8 +159,7 @@ export function Field<T>(props: FieldProps<T>) {
         clearValidationTimeout();
       }
 
-      onChange({
-        ...stateRef.current,
+      updateState({
         errorMessage,
         isValid: !errorMessage,
         isValidating: willValidateAsync,
@@ -174,8 +177,7 @@ export function Field<T>(props: FieldProps<T>) {
       isValidatingOnChangeRef.current = false;
 
       if (currentValidation === validationIdRef.current) {
-        onChange({
-          ...stateRef.current,
+        updateState({
           errorMessage: asyncErrorMessage,
           isValid: !asyncErrorMessage,
           isValidating: isValidatingOnBlurRef.current,
@@ -193,7 +195,7 @@ export function Field<T>(props: FieldProps<T>) {
       return;
     }
     void runDependencyValidation(changedHooks);
-  }, [validation, validationMode, onChange]);
+  }, [validation, validationMode, updateState]);
 
   useEffect(() => {
     return () => {
@@ -202,10 +204,6 @@ export function Field<T>(props: FieldProps<T>) {
       }
     };
   }, []);
-
-  function updateState(overrides: Partial<FieldState<T>>) {
-    onChange({ ...stateRef.current, ...overrides });
-  }
 
   function validateOnChange(value: T) {
     const errorMessage = validation?.onChange?.(value);
