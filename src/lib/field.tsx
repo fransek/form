@@ -22,6 +22,7 @@ import {
   FieldProps,
   FieldState,
 } from "./types";
+import { useCacheValidation } from "./use-cache-validation";
 
 /**
  * A headless form field component that manages validation state using a render prop pattern.
@@ -44,11 +45,13 @@ export function Field<T>(props: FieldProps<T>) {
     onChange,
     onInput,
     onBlur,
-    validation,
-    debounceMs = formDebounceMs || 500,
-    validationMode = formValidationMode || "touchedAndDirty",
-    skipAsyncValidationOnSubmit = formSkipAsyncValidationOnSubmit || false,
+    validation: validationProp,
+    debounceMs = formDebounceMs ?? 500,
+    validationMode = formValidationMode ?? "touchedAndDirty",
+    skipAsyncValidationOnSubmit = formSkipAsyncValidationOnSubmit ?? false,
   } = props;
+
+  const { validation, resetSnapshots } = useCacheValidation(validationProp);
 
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -190,6 +193,8 @@ export function Field<T>(props: FieldProps<T>) {
     if (changedHooks.length === 0) {
       return;
     }
+
+    resetSnapshots(changedHooks);
 
     if (!shouldValidate(stateRef.current, validationMode)) {
       return;

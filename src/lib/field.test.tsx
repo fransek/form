@@ -861,12 +861,11 @@ describe("Field", () => {
       return { input, user, registrations, onChangeSpy };
     };
 
-    it("should revalidate on submit when touched and dirty", async () => {
-      const onChangeValidatorShouldFail = { current: false };
+    it("should reuse cached onChange results during submit when the value is unchanged", async () => {
+      const onChange = vi.fn(() => undefined);
       const { input, user, registrations, onChangeSpy } = renderWithFormContext(
         {
-          onChange: () =>
-            onChangeValidatorShouldFail.current ? "Now invalid" : undefined,
+          onChange,
         },
       );
 
@@ -874,7 +873,7 @@ describe("Field", () => {
       await user.tab();
 
       onChangeSpy.mockClear();
-      onChangeValidatorShouldFail.current = true;
+      onChange.mockClear();
 
       let validationResult: boolean | undefined;
       await act(async () => {
@@ -882,11 +881,12 @@ describe("Field", () => {
       });
       await act(async () => registrations.commitPendingValidation?.());
 
-      expect(validationResult).toBe(false);
+      expect(validationResult).toBe(true);
+      expect(onChange).not.toHaveBeenCalled();
       expect(onChangeSpy).toHaveBeenCalledTimes(1);
       const committedState = onChangeSpy.mock.calls[0][0];
-      expect(committedState.errorMessage).toBe("Now invalid");
-      expect(committedState.isValid).toBe(false);
+      expect(committedState.errorMessage).toBeUndefined();
+      expect(committedState.isValid).toBe(true);
     });
 
     it("should run submit validation and commit pending result", async () => {
@@ -922,7 +922,7 @@ describe("Field", () => {
       expect(committedState.isValid).toBe(false);
     });
 
-    it("should run onChangeAsync and onBlurAsync during submit validation by default", async () => {
+    it("should reuse cached onChangeAsync and onBlurAsync results during submit validation by default", async () => {
       const onChangeAsync = vi.fn(async () => "Change async error");
       const onBlurAsync = vi.fn(async () => "Blur async error");
       const onSubmit = vi.fn(() => undefined);
@@ -947,8 +947,8 @@ describe("Field", () => {
       });
 
       expect(isValid).toBe(false);
-      expect(onChangeAsync).toHaveBeenCalledTimes(1);
-      expect(onBlurAsync).toHaveBeenCalledTimes(1);
+      expect(onChangeAsync).not.toHaveBeenCalled();
+      expect(onBlurAsync).not.toHaveBeenCalled();
       expect(onSubmit).toHaveBeenCalledTimes(1);
       expect(onSubmitAsync).toHaveBeenCalledTimes(1);
     });

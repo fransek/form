@@ -30,19 +30,19 @@ export interface FieldRenderProps<T> extends FieldState<T> {
 export interface Validation<T> {
   /** Synchronous validator to run when the field value changes. */
   onChange?: SyncValidator<T>;
-  /** External values that should trigger `onChange` revalidation when they change. */
+  /** External values that should trigger `onChange` revalidation and invalidate its cached result when they change. */
   onChangeDependencies?: readonly unknown[];
   /** Asynchronous validator to run when the field value changes (debounced). */
   onChangeAsync?: AsyncValidator<T>;
-  /** External values that should trigger `onChangeAsync` revalidation when they change. */
+  /** External values that should trigger `onChangeAsync` revalidation and invalidate its cached result when they change. */
   onChangeAsyncDependencies?: readonly unknown[];
   /** Synchronous validator to run when the field loses focus. */
   onBlur?: SyncValidator<T>;
-  /** External values that should trigger `onBlur` revalidation when they change. */
+  /** External values that should trigger `onBlur` revalidation and invalidate its cached result when they change. */
   onBlurDependencies?: readonly unknown[];
   /** Asynchronous validator to run when the field loses focus. */
   onBlurAsync?: AsyncValidator<T>;
-  /** External values that should trigger `onBlurAsync` revalidation when they change. */
+  /** External values that should trigger `onBlurAsync` revalidation and invalidate its cached result when they change. */
   onBlurAsyncDependencies?: readonly unknown[];
   /** Synchronous validator to run when the form is submitted. */
   onSubmit?: SyncValidator<T>;
@@ -166,4 +166,9 @@ export type SubmitContext = {
   validate: () => Promise<boolean>;
   /** Runs `onCommit` validations and commits pending validation state changes. */
   commit: (options?: CommitOptions) => boolean;
+};
+
+export type Snapshot<T> = {
+  value: T;
+  errorMessage: React.ReactNode;
 };

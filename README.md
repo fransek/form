@@ -152,7 +152,10 @@ By default, errors are shown only after the field has been both touched **and** 
 ### Validation dependencies
 
 Use dependency arrays when a validator depends on values outside the field itself.
-When one of those values changes, the field is revalidated using the validators whose dependency arrays changed.
+Validation results for `onChange`, `onChangeAsync`, `onBlur`, and `onBlurAsync`
+are cached per field value. When one of those external values changes, the field
+is revalidated using the validators whose dependency arrays changed and the
+matching cached result is invalidated.
 
 ```tsx
 <Field
@@ -175,7 +178,8 @@ When one of those values changes, the field is revalidated using the validators 
 </Field>
 ```
 
-In this example, changing `password` reruns the repeat-password check.
+In this example, changing `password` reruns the repeat-password check even when
+the repeat-password field value itself stays the same.
 
 ## Form
 
@@ -195,7 +199,15 @@ In this example, changing `password` reruns the repeat-password check.
 >
 ```
 
-`validate` runs every registered field's `onChange`, `onBlur`, and `onSubmit` validators and returns whether they pass. By default it also runs `onChangeAsync` and `onBlurAsync`; set `skipAsyncValidationOnSubmit` on `<Form>` (default for all fields) or on a specific `<Field>` to skip those two async hooks during submit validation. `onSubmitAsync` still runs. `commit` then applies pending validation state updates, runs `onCommit` validators, and optionally focuses the first invalid field.
+`validate` evaluates every registered field using its `onChange`, `onBlur`, and
+`onSubmit` validators and returns whether they pass. By default it also runs
+`onChangeAsync` and `onBlurAsync`; set `skipAsyncValidationOnSubmit` on
+`<Form>` (default for all fields) or on a specific `<Field>` to skip those two
+async hooks during submit validation. `onSubmitAsync` still runs. Validation
+hooks reuse cached results when the field value is unchanged, so provide the
+matching `*Dependencies` array whenever a validator also depends on external
+state. `commit` then applies pending validation state updates, runs `onCommit`
+validators, and optionally focuses the first invalid field.
 
 ## Render Props
 
