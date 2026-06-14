@@ -32,8 +32,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: lts/*
-          registry-url: "https://npm.pkg.github.com"
-          scope: "@${{ github.repository_owner }}"
           cache: "pnpm"
 
       - name: Install dependencies
@@ -62,7 +60,14 @@ jobs:
           fs.writeFileSync('package.json', `${JSON.stringify(pkg, null, 2)}\n`);
           NODE
 
+      - name: Configure GitHub Packages auth
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@${{ github.repository_owner }}"
+
       - name: Publish to GitHub Packages
-        run: pnpm publish --no-git-checks --tag pr-${{ github.event.pull_request.number }}
+        run: pnpm publish --registry https://npm.pkg.github.com --no-git-checks --tag pr-${{ github.event.pull_request.number }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
