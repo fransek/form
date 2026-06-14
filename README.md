@@ -152,10 +152,10 @@ By default, errors are shown only after the field has been both touched **and** 
 ### Validation dependencies
 
 Use dependency arrays when a validator depends on values outside the field itself.
-Validation results for `onChange`, `onChangeAsync`, `onBlur`, and `onBlurAsync`
-are cached per field value. When one of those external values changes, the field
-is revalidated using the validators whose dependency arrays changed and the
-matching cached result is invalidated.
+Dependency arrays are explicit: they control when a field should revalidate
+because related external state changed. When one of those external values
+changes, the field is revalidated using the validators whose dependency arrays
+changed.
 
 ```tsx
 <Field
@@ -203,10 +203,10 @@ the repeat-password field value itself stays the same.
 `onSubmit` validators and returns whether they pass. By default it also runs
 `onChangeAsync` and `onBlurAsync`; set `skipAsyncValidationOnSubmit` on
 `<Form>` (default for all fields) or on a specific `<Field>` to skip those two
-async hooks during submit validation. `onSubmitAsync` still runs. Validation
-hooks reuse cached results when the field value is unchanged, so provide the
+async hooks during submit validation. `onSubmitAsync` still runs. Provide the
 matching `*Dependencies` array whenever a validator also depends on external
-state. `commit` then applies pending validation state updates, runs `onCommit`
+state and should be revalidated when that state changes. `commit` then applies
+pending validation state updates, runs `onCommit`
 validators, and optionally focuses the first invalid field.
 
 ## Render Props

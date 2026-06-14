@@ -22,7 +22,6 @@ import {
   FieldProps,
   FieldState,
 } from "./types";
-import { useMemoizedValidation } from "./use-memoized-validation";
 
 /**
  * A headless form field component that manages validation state using a render prop pattern.
@@ -45,13 +44,11 @@ export function Field<T>(props: FieldProps<T>) {
     onChange,
     onInput,
     onBlur,
-    validation: validationProp,
+    validation,
     debounceMs = formDebounceMs ?? 500,
     validationMode = formValidationMode ?? "touchedAndDirty",
     skipAsyncValidationOnSubmit = formSkipAsyncValidationOnSubmit ?? false,
   } = props;
-
-  const { validation, invalidate } = useMemoizedValidation(validationProp);
 
   const stateRef = useRef(state);
 
@@ -200,13 +197,11 @@ export function Field<T>(props: FieldProps<T>) {
       return;
     }
 
-    invalidate(changedHooks);
-
     if (!shouldValidate(stateRef.current, validationMode)) {
       return;
     }
     void runDependencyValidation(changedHooks);
-  }, [validation, validationMode, updateState, invalidate]);
+  }, [validation, validationMode, updateState]);
 
   useEffect(() => {
     return () => {

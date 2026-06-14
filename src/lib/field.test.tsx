@@ -861,7 +861,7 @@ describe("Field", () => {
       return { input, user, registrations, onChangeSpy };
     };
 
-    it("should reuse cached onChange results during submit when the value is unchanged", async () => {
+    it("should rerun onChange during submit when the value is unchanged", async () => {
       const onChange = vi.fn(() => undefined);
       const { input, user, registrations, onChangeSpy } = renderWithFormContext(
         {
@@ -882,7 +882,7 @@ describe("Field", () => {
       await act(async () => registrations.commitPendingValidation?.());
 
       expect(validationResult).toBe(true);
-      expect(onChange).not.toHaveBeenCalled();
+      expect(onChange).toHaveBeenCalledWith("abc");
       expect(onChangeSpy).toHaveBeenCalledTimes(1);
       const committedState = onChangeSpy.mock.calls[0][0];
       expect(committedState.errorMessage).toBeUndefined();
@@ -922,7 +922,7 @@ describe("Field", () => {
       expect(committedState.isValid).toBe(false);
     });
 
-    it("should reuse cached onChangeAsync and onBlurAsync results during submit validation by default", async () => {
+    it("should rerun onChangeAsync and onBlurAsync during submit validation by default", async () => {
       const onChangeAsync = vi.fn(async () => "Change async error");
       const onBlurAsync = vi.fn(async () => "Blur async error");
       const onSubmit = vi.fn(() => undefined);
@@ -947,8 +947,8 @@ describe("Field", () => {
       });
 
       expect(isValid).toBe(false);
-      expect(onChangeAsync).not.toHaveBeenCalled();
-      expect(onBlurAsync).not.toHaveBeenCalled();
+      expect(onChangeAsync).toHaveBeenCalledWith("abc");
+      expect(onBlurAsync).toHaveBeenCalledWith("abc");
       expect(onSubmit).toHaveBeenCalledTimes(1);
       expect(onSubmitAsync).toHaveBeenCalledTimes(1);
     });
