@@ -1,4 +1,10 @@
-import { FieldState, SyncValidator, ValidationMode, Validator } from "./types";
+import {
+  FieldState,
+  SyncValidator,
+  Validation,
+  ValidationMode,
+  Validator,
+} from "./types";
 
 /** Creates the initial state for a field with the provided value. */
 export function createFieldState<T>(initialValue: T): FieldState<T> {
@@ -113,5 +119,61 @@ export function shouldValidate<T>(
       state.isTouched &&
       state.isDirty) ||
     (validationMode === "touchedOrDirty" && (state.isTouched || state.isDirty))
+  );
+}
+
+export async function validateFieldState<T>(
+  state: FieldState<T>,
+  validation: Validation<T> | undefined,
+  skipAsyncValidationOnSubmit: boolean,
+) {
+  const result = validate(state, [
+    validation?.onChange,
+    validation?.onBlur,
+    validation?.onSubmit,
+  ]);
+
+  if (result.isValid) {
+    return await validateAsync(state, [
+      skipAsyncValidationOnSubmit ? undefined : validation?.onChangeAsync,
+      skipAsyncValidationOnSubmit ? undefined : validation?.onBlurAsync,
+      validation?.onSubmitAsync,
+    ]);
+  }
+
+  return result;
+}
+
+export function shouldValidateOnChange<T>(
+  state: FieldState<T>,
+  validationMode: ValidationMode | undefined,
+) {
+  return (
+    validationMode === "dirty" ||
+    validationMode === "touchedOrDirty" ||
+    state.isTouched
+  );
+}
+
+export function shouldValidateOnBlur<T>(
+  state: FieldState<T>,
+  validationMode: ValidationMode | undefined,
+) {
+  return (
+    validationMode === "touched" ||
+    validationMode === "touchedOrDirty" ||
+    state.isDirty
+  );
+}
+
+export function shouldValidateChangeOnBlur<T>(
+  state: FieldState<T>,
+  validationMode: ValidationMode | undefined,
+) {
+  return (
+    !state.isTouched &&
+    (validationMode === "touched" ||
+      (validationMode === "touchedOrDirty" && !state.isDirty) ||
+      (validationMode === "touchedAndDirty" && state.isDirty))
   );
 }

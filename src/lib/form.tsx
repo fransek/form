@@ -13,6 +13,7 @@ export function Form({
   onSubmit,
   validationMode,
   debounceMs,
+  skipAsyncValidationOnSubmit,
   ...props
 }: FormProps) {
   const fieldsRef = useRef<FieldMap>(new Map());
@@ -76,6 +77,7 @@ export function Form({
         deregisterField,
         validationMode,
         debounceMs,
+        skipAsyncValidationOnSubmit,
       }}
     >
       <form

@@ -167,6 +167,40 @@ describe("Form", () => {
     });
   });
 
+  it("should call registered field validation without submit options", async () => {
+    const user = userEvent.setup();
+    const validateFirst = vi.fn(async () => true);
+    const validateSecond = vi.fn(async () => true);
+    const onSubmit = vi.fn(async ({ event, validate }) => {
+      event.preventDefault();
+      await validate();
+    });
+
+    render(
+      <Form onSubmit={onSubmit}>
+        <RegisteredField
+          id="first-field"
+          validate={validateFirst}
+          commitPendingValidation={vi.fn()}
+        />
+        <RegisteredField
+          id="second-field"
+          validate={validateSecond}
+          commitPendingValidation={vi.fn()}
+        />
+        <button type="submit">Submit</button>
+      </Form>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Submit" }));
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledTimes(1);
+      expect(validateFirst).toHaveBeenCalledWith();
+      expect(validateSecond).toHaveBeenCalledWith();
+    });
+  });
+
   it("should focus current ref after registered field remounts", async () => {
     const user = userEvent.setup();
     const validate = vi.fn(async () => false);

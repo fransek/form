@@ -1,12 +1,21 @@
-import { useEffect, useId, useRef } from "react";
+import { ReactNode, useCallback, useEffect, useId, useRef } from "react";
 import {
   getAsyncValidationError,
+  getAsyncValidators,
   getChangedDependencyHooks,
   getDependenciesByHook,
   getSyncValidationError,
+  getSyncValidators,
 } from "./field-utils";
 import { useFormContext } from "./form";
-import { shouldValidate, validate, validateAsync } from "./state-utils";
+import {
+  shouldValidate,
+  shouldValidateChangeOnBlur,
+  shouldValidateOnBlur,
+  shouldValidateOnChange,
+  validate,
+  validateFieldState,
+} from "./state-utils";
 import {
   DependenciesByHook,
   DependencyValidationHook,
@@ -26,6 +35,7 @@ export function Field<T>(props: FieldProps<T>) {
     deregisterField,
     validationMode: formValidationMode,
     debounceMs: formDebounceMs,
+    skipAsyncValidationOnSubmit: formSkipAsyncValidationOnSubmit,
   } = useFormContext();
 
   const {
@@ -35,12 +45,16 @@ export function Field<T>(props: FieldProps<T>) {
     onInput,
     onBlur,
     validation,
-    debounceMs = formDebounceMs || 500,
-    validationMode = formValidationMode || "touchedAndDirty",
+    debounceMs = formDebounceMs ?? 500,
+    validationMode = formValidationMode ?? "touchedAndDirty",
+    skipAsyncValidationOnSubmit = formSkipAsyncValidationOnSubmit ?? false,
   } = props;
 
   const stateRef = useRef(state);
+
+  // eslint-disable-next-line react-hooks/refs
   stateRef.current = state;
+
   const validationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -54,50 +68,21 @@ export function Field<T>(props: FieldProps<T>) {
   const fieldRef = useRef<HTMLElement | null>(null);
   const id = useId();
 
-  const clearValidationTimeout = () => {
-    if (!validationTimeoutRef.current) {
-      return;
-    }
-    clearTimeout(validationTimeoutRef.current);
-    validationTimeoutRef.current = null;
-    isValidatingOnChangeRef.current = false;
-  };
-
-  const updateState = (overrides: Partial<FieldState<T>>) => {
-    onChange({ ...stateRef.current, ...overrides });
-  };
-
-  const shouldValidateOnChange = () =>
-    validationMode === "dirty" ||
-    validationMode === "touchedOrDirty" ||
-    stateRef.current.isTouched;
-
-  const shouldValidateOnBlur = () =>
-    validationMode === "touched" ||
-    validationMode === "touchedOrDirty" ||
-    stateRef.current.isDirty;
-
-  const shouldValidateChangeOnBlur = () =>
-    !stateRef.current.isTouched &&
-    (validationMode === "touched" ||
-      (validationMode === "touchedOrDirty" && !stateRef.current.isDirty) ||
-      (validationMode === "touchedAndDirty" && stateRef.current.isDirty));
+  const updateState = useCallback(
+    (overrides: Partial<FieldState<T>>) => {
+      onChange({ ...stateRef.current, ...overrides });
+    },
+    [onChange],
+  );
 
   useEffect(() => {
     async function performValidation() {
       validationIdRef.current++;
-      pendingValidationRef.current = validate(stateRef.current, [
-        validation?.onChange,
-        validation?.onBlur,
-        validation?.onSubmit,
-      ]);
-      if (pendingValidationRef.current.isValid) {
-        pendingValidationRef.current = await validateAsync(stateRef.current, [
-          validation?.onChangeAsync,
-          validation?.onBlurAsync,
-          validation?.onSubmitAsync,
-        ]);
-      }
+      pendingValidationRef.current = await validateFieldState<T>(
+        stateRef.current,
+        validation,
+        skipAsyncValidationOnSubmit,
+      );
       return pendingValidationRef.current.isValid;
     }
 
@@ -113,7 +98,7 @@ export function Field<T>(props: FieldProps<T>) {
 
     function commitPendingValidation() {
       if (pendingValidationRef.current) {
-        onChange(pendingValidationRef.current);
+        updateState(pendingValidationRef.current);
         pendingValidationRef.current = null;
       }
     }
@@ -129,26 +114,43 @@ export function Field<T>(props: FieldProps<T>) {
     return () => {
       deregisterField(id);
     };
-  }, [id, registerField, validation, onChange, deregisterField]);
+  }, [
+    id,
+    registerField,
+    validation,
+    updateState,
+    deregisterField,
+    skipAsyncValidationOnSubmit,
+  ]);
+
+  function clearValidationTimeout() {
+    if (!validationTimeoutRef.current) {
+      return;
+    }
+    clearTimeout(validationTimeoutRef.current);
+    validationTimeoutRef.current = null;
+    isValidatingOnChangeRef.current = false;
+  }
 
   useEffect(() => {
+    function getChangedHooks() {
+      const currentDependenciesByHook = getDependenciesByHook(validation);
+      const previousDependenciesByHook = previousDependenciesRef.current;
+      previousDependenciesRef.current = currentDependenciesByHook;
+      const changedHooks = getChangedDependencyHooks(
+        previousDependenciesByHook,
+        currentDependenciesByHook,
+      );
+      return changedHooks;
+    }
+
     async function runDependencyValidation(
       changedHooks: DependencyValidationHook[],
     ) {
       const value = stateRef.current.value;
       const currentValidation = ++validationIdRef.current;
-      const syncValidators = [
-        changedHooks.includes("onChange") ? validation?.onChange : undefined,
-        changedHooks.includes("onBlur") ? validation?.onBlur : undefined,
-      ];
-      const asyncValidators = [
-        changedHooks.includes("onChangeAsync")
-          ? validation?.onChangeAsync
-          : undefined,
-        changedHooks.includes("onBlurAsync")
-          ? validation?.onBlurAsync
-          : undefined,
-      ];
+      const syncValidators = getSyncValidators<T>(changedHooks, validation);
+      const asyncValidators = getAsyncValidators<T>(changedHooks, validation);
       const hasSyncValidators = syncValidators.some(Boolean);
       const hasAsyncValidators = asyncValidators.some(Boolean);
 
@@ -163,8 +165,7 @@ export function Field<T>(props: FieldProps<T>) {
         clearValidationTimeout();
       }
 
-      onChange({
-        ...stateRef.current,
+      updateState({
         errorMessage,
         isValid: !errorMessage,
         isValidating: willValidateAsync,
@@ -182,8 +183,7 @@ export function Field<T>(props: FieldProps<T>) {
       isValidatingOnChangeRef.current = false;
 
       if (currentValidation === validationIdRef.current) {
-        onChange({
-          ...stateRef.current,
+        updateState({
           errorMessage: asyncErrorMessage,
           isValid: !asyncErrorMessage,
           isValidating: isValidatingOnBlurRef.current,
@@ -191,13 +191,7 @@ export function Field<T>(props: FieldProps<T>) {
       }
     }
 
-    const currentDependenciesByHook = getDependenciesByHook(validation);
-    const previousDependenciesByHook = previousDependenciesRef.current;
-    previousDependenciesRef.current = currentDependenciesByHook;
-    const changedHooks = getChangedDependencyHooks(
-      previousDependenciesByHook,
-      currentDependenciesByHook,
-    );
+    const changedHooks = getChangedHooks();
 
     if (changedHooks.length === 0) {
       return;
@@ -207,7 +201,7 @@ export function Field<T>(props: FieldProps<T>) {
       return;
     }
     void runDependencyValidation(changedHooks);
-  }, [validation, validationMode, onChange]);
+  }, [validation, validationMode, updateState]);
 
   useEffect(() => {
     return () => {
@@ -216,6 +210,39 @@ export function Field<T>(props: FieldProps<T>) {
       }
     };
   }, []);
+
+  function validateOnChange(value: T) {
+    const errorMessage = validation?.onChange?.(value);
+    const willValidateAsync = Boolean(
+      validation?.onChangeAsync && !errorMessage,
+    );
+
+    updateState({
+      value,
+      errorMessage,
+      isDirty: true,
+      isValid: !errorMessage,
+      isValidating: willValidateAsync,
+    });
+
+    return willValidateAsync;
+  }
+
+  function validateOnChangeAsync(value: T, currentValidation: number) {
+    isValidatingOnChangeRef.current = true;
+    validationTimeoutRef.current = setTimeout(async () => {
+      const asyncErrorMessage = await validation?.onChangeAsync?.(value);
+
+      isValidatingOnChangeRef.current = false;
+      if (currentValidation === validationIdRef.current) {
+        updateState({
+          errorMessage: asyncErrorMessage,
+          isValid: !asyncErrorMessage,
+          isValidating: isValidatingOnBlurRef.current,
+        });
+      }
+    }, debounceMs);
+  }
 
   function handleChange(value: T) {
     onInput?.(value);
@@ -226,34 +253,11 @@ export function Field<T>(props: FieldProps<T>) {
 
     const currentValidation = ++validationIdRef.current;
 
-    if (shouldValidateOnChange()) {
-      const errorMessage = validation?.onChange?.(value);
-      const willValidateAsync = Boolean(
-        validation?.onChangeAsync && !errorMessage,
-      );
-
-      updateState({
-        value,
-        errorMessage,
-        isDirty: true,
-        isValid: !errorMessage,
-        isValidating: willValidateAsync,
-      });
+    if (shouldValidateOnChange(stateRef.current, validationMode)) {
+      const willValidateAsync = validateOnChange(value);
 
       if (willValidateAsync) {
-        isValidatingOnChangeRef.current = true;
-        validationTimeoutRef.current = setTimeout(async () => {
-          const asyncErrorMessage = await validation?.onChangeAsync?.(value);
-
-          isValidatingOnChangeRef.current = false;
-          if (currentValidation === validationIdRef.current) {
-            updateState({
-              errorMessage: asyncErrorMessage,
-              isValid: !asyncErrorMessage,
-              isValidating: isValidatingOnBlurRef.current,
-            });
-          }
-        }, debounceMs);
+        validateOnChangeAsync(value, currentValidation);
       }
     } else {
       updateState({
@@ -264,43 +268,60 @@ export function Field<T>(props: FieldProps<T>) {
     }
   }
 
+  function validateOnBlur() {
+    let errorMessage =
+      stateRef.current.errorMessage ||
+      validation?.onBlur?.(stateRef.current.value);
+
+    if (
+      !errorMessage &&
+      shouldValidateChangeOnBlur(stateRef.current, validationMode) &&
+      validation?.onChange
+    ) {
+      errorMessage = validation.onChange(stateRef.current.value);
+    }
+    return errorMessage;
+  }
+
+  async function validateOnBlurAsync(errorMessage: ReactNode) {
+    isValidatingOnBlurRef.current = true;
+    updateState({ isValidating: true, isTouched: true });
+
+    const asyncValidations: Promise<React.ReactNode>[] = [];
+
+    if (validation?.onBlurAsync) {
+      asyncValidations.push(validation.onBlurAsync(stateRef.current.value));
+    }
+
+    if (
+      shouldValidateChangeOnBlur(stateRef.current, validationMode) &&
+      validation?.onChangeAsync
+    ) {
+      asyncValidations.push(validation.onChangeAsync(stateRef.current.value));
+    }
+
+    const [blurError, changeError] = await Promise.all(asyncValidations);
+    errorMessage = blurError || changeError;
+    return errorMessage;
+  }
+
   async function handleBlur() {
     onBlur?.();
 
-    if (!shouldValidateOnBlur()) {
+    if (!shouldValidateOnBlur(stateRef.current, validationMode)) {
       updateState({ isTouched: true });
       return;
     }
 
     const currentValidation = validationIdRef.current;
 
-    let errorMessage =
-      stateRef.current.errorMessage ||
-      validation?.onBlur?.(stateRef.current.value);
-
-    if (!errorMessage && shouldValidateChangeOnBlur() && validation?.onChange) {
-      errorMessage = validation.onChange(stateRef.current.value);
-    }
+    let errorMessage = validateOnBlur();
 
     if (
       !errorMessage &&
       (validation?.onBlurAsync || validation?.onChangeAsync)
     ) {
-      isValidatingOnBlurRef.current = true;
-      updateState({ isValidating: true, isTouched: true });
-
-      const asyncValidations: Promise<React.ReactNode>[] = [];
-
-      if (validation?.onBlurAsync) {
-        asyncValidations.push(validation.onBlurAsync(stateRef.current.value));
-      }
-
-      if (shouldValidateChangeOnBlur() && validation?.onChangeAsync) {
-        asyncValidations.push(validation.onChangeAsync(stateRef.current.value));
-      }
-
-      const [blurError, changeError] = await Promise.all(asyncValidations);
-      errorMessage = blurError || changeError;
+      errorMessage = await validateOnBlurAsync(errorMessage);
     }
 
     isValidatingOnBlurRef.current = false;
@@ -329,8 +350,9 @@ export function Field<T>(props: FieldProps<T>) {
     fieldRef.current = el;
   };
 
+  // eslint-disable-next-line react-hooks/refs
   return children({
-    ...stateRef.current,
+    ...state,
     handleChange,
     handleBlur,
     ref,

@@ -14,13 +14,13 @@ npm install @fransek/form
 
 The entire API is two components and three utilities:
 
-| Export | Description |
-|--------|-------------|
-| `<Form>` | Wraps a `<form>`, coordinates submit-time validation across all fields |
-| `<Field>` | Headless field component. Manages validation lifecycle via a render prop |
-| `createFieldState(initialValue)` | Creates the initial `FieldState` for a field |
-| `validate(state, validators, mode?)` | Runs synchronous validators outside of a `<Field>` |
-| `validateAsync(state, validators, mode?)` | Runs async validators outside of a `<Field>` |
+| Export                                    | Description                                                              |
+| ----------------------------------------- | ------------------------------------------------------------------------ |
+| `<Form>`                                  | Wraps a `<form>`, coordinates submit-time validation across all fields   |
+| `<Field>`                                 | Headless field component. Manages validation lifecycle via a render prop |
+| `createFieldState(initialValue)`          | Creates the initial `FieldState` for a field                             |
+| `validate(state, validators, mode?)`      | Runs synchronous validators outside of a `<Field>`                       |
+| `validateAsync(state, validators, mode?)` | Runs async validators outside of a `<Field>`                             |
 
 ## Quick Start
 
@@ -85,8 +85,8 @@ const state = createFieldState<string[]>([]); // FieldState<string[]>
 interface FieldState<T> {
   value: T;
   errorMessage: React.ReactNode; // undefined when valid
-  isTouched: boolean;   // true after the field has been blurred
-  isDirty: boolean;     // true after the value has changed
+  isTouched: boolean; // true after the field has been blurred
+  isDirty: boolean; // true after the value has changed
   isValid: boolean;
   isValidating: boolean; // true while an async validator is running
 }
@@ -120,11 +120,11 @@ Pass validators to `<Field>` via the `validation` prop. Each key maps to a diffe
   state={state}
   onChange={setState}
   validation={{
-    onChange: required,           // sync, runs on every change
+    onChange: required, // sync, runs on every change
     onChangeAsync: checkAvailable, // async, debounced (default 500 ms)
-    onBlur: required,             // sync, runs on blur
-    onBlurAsync: checkAvailable,  // async, runs on blur
-    onSubmit: required,           // sync, runs on form submit
+    onBlur: required, // sync, runs on blur
+    onBlurAsync: checkAvailable, // async, runs on blur
+    onSubmit: required, // sync, runs on form submit
     onSubmitAsync: checkAvailable, // async, runs on form submit
   }}
 />
@@ -134,12 +134,12 @@ Pass validators to `<Field>` via the `validation` prop. Each key maps to a diffe
 
 By default, errors are shown only after the field has been both touched **and** changed (`"touchedAndDirty"`). Override this on `<Form>` or per `<Field>`:
 
-| Mode | When errors appear |
-|------|--------------------|
+| Mode                | When errors appear                          |
+| ------------------- | ------------------------------------------- |
 | `"touchedAndDirty"` | After blur **and** a value change (default) |
-| `"touchedOrDirty"` | After blur **or** a value change |
-| `"touched"` | After blur only |
-| `"dirty"` | After a value change only |
+| `"touchedOrDirty"`  | After blur **or** a value change            |
+| `"touched"`         | After blur only                             |
+| `"dirty"`           | After a value change only                   |
 
 ```tsx
 // Set a default for all fields
@@ -152,7 +152,10 @@ By default, errors are shown only after the field has been both touched **and** 
 ### Validation dependencies
 
 Use dependency arrays when a validator depends on values outside the field itself.
-When one of those values changes, the field is revalidated using the validators whose dependency arrays changed.
+Dependency arrays are explicit: they control when a field should revalidate
+because related external state changed. When one of those external values
+changes, the field is revalidated using the validators whose dependency arrays
+changed.
 
 ```tsx
 <Field
@@ -175,7 +178,8 @@ When one of those values changes, the field is revalidated using the validators 
 </Field>
 ```
 
-In this example, changing `password` reruns the repeat-password check.
+In this example, changing `password` reruns the repeat-password check even when
+the repeat-password field value itself stays the same.
 
 ## Form
 
@@ -191,10 +195,19 @@ In this example, changing `password` reruns the repeat-password check.
   }}
   validationMode="touchedAndDirty" // default for all fields
   debounceMs={500}                  // default async debounce for all fields
+  skipAsyncValidationOnSubmit       // optional default for all fields
 >
 ```
 
-`validate` runs every registered field's `onChange`, `onBlur`, and `onSubmit` validators and returns whether they pass. `commit` then applies pending validation state updates, runs `onCommit` validators, and optionally focuses the first invalid field.
+`validate` evaluates every registered field using its `onChange`, `onBlur`, and
+`onSubmit` validators and returns whether they pass. By default it also runs
+`onChangeAsync` and `onBlurAsync`; set `skipAsyncValidationOnSubmit` on
+`<Form>` (default for all fields) or on a specific `<Field>` to skip those two
+async hooks during submit validation. `onSubmitAsync` still runs. Provide the
+matching `*Dependencies` array whenever a validator also depends on external
+state and should be revalidated when that state changes. `commit` then applies
+pending validation state updates, runs `onCommit`
+validators, and optionally focuses the first invalid field.
 
 ## Render Props
 
@@ -203,59 +216,89 @@ The `children` function of `<Field>` receives a `FieldRenderProps<T>` object:
 ```ts
 interface FieldRenderProps<T> extends FieldState<T> {
   handleChange: (value: T) => void; // call on input change
-  handleBlur: () => void;           // call on input blur
+  handleBlur: () => void; // call on input blur
   ref: (el: HTMLElement | null) => void; // attach to the root input element
 }
 ```
 
 Always attach `ref` to enable `focusFirstError` on submit.
 
-## Validate Outside a Field
+## Validate a FieldState Manually
 
-Use `validate` or `validateAsync` to revalidate a field's state from outside a `<Field>` component — for example, to update an interdependent field when a related field changes:
+For cross-field validation inside a form, prefer `*Dependencies` on the
+relevant `<Field>`. That keeps revalidation attached to the field that owns the
+error state:
 
 ```tsx
 <Field
-  state={startDate}
-  onChange={(startDate) =>
-    setForm((prev) => ({
-      ...prev,
-      startDate,
-      // re-validate dueDate whenever startDate changes
-      dueDate: validate(prev.dueDate, validateDueDate(startDate.value), "touchedAndDirty"),
-    }))
-  }
-  validation={{ onChange: validateStartDate(form.dueDate.value) }}
+  state={repeatPassword}
+  onChange={setRepeatPassword}
+  validation={{
+    onChange: (value) =>
+      value !== password.value ? "Passwords do not match" : undefined,
+    onChangeDependencies: [password.value],
+  }}
 >
 ```
 
-`validate` accepts a single validator or an array and stops at the first error. `validateAsync` runs all validators in parallel and returns the first error in list order.
+Use `validate` or `validateAsync` when you need to validate a `FieldState`
+manually outside a `<Field>` lifecycle — for example, in custom state
+orchestration, reducers, or tests:
+
+```tsx
+const nextCoupon = validate(form.coupon, [requiredCoupon, knownCoupon]);
+const nextEmail = await validateAsync(form.email, [
+  requiredEmail,
+  checkEmailAvailability,
+]);
+
+setForm((prev) => ({
+  ...prev,
+  coupon: nextCoupon,
+  email: nextEmail,
+}));
+```
+
+`validate` accepts a single validator or an array and stops at the first error.
+`validateAsync` runs all validators in parallel and returns the first error in
+validator-list order.
 
 ## Dynamic Fields
 
 Manage dynamic field lists by storing each field's `FieldState` in an array:
 
 ```tsx
-const [items, setItems] = useState<{ id: number; state: FieldState<string> }[]>([]);
+const [items, setItems] = useState<{ id: number; state: FieldState<string> }[]>(
+  [],
+);
 
 // Add a field
 setItems((prev) => [...prev, { id: nextId++, state: createFieldState("") }]);
 
 // Render
-{items.map((item, index) => (
-  <Field
-    key={item.id}
-    state={item.state}
-    onChange={(state) =>
-      setItems((prev) => {
-        const next = [...prev];
-        next[index].state = state;
-        return next;
-      })
-    }
-    validation={{ onChange: required }}
-  >
-    {(props) => <input value={props.value} onChange={(e) => props.handleChange(e.target.value)} onBlur={props.handleBlur} ref={props.ref} />}
-  </Field>
-))}
+{
+  items.map((item, index) => (
+    <Field
+      key={item.id}
+      state={item.state}
+      onChange={(state) =>
+        setItems((prev) => {
+          const next = [...prev];
+          next[index].state = state;
+          return next;
+        })
+      }
+      validation={{ onChange: required }}
+    >
+      {(props) => (
+        <input
+          value={props.value}
+          onChange={(e) => props.handleChange(e.target.value)}
+          onBlur={props.handleBlur}
+          ref={props.ref}
+        />
+      )}
+    </Field>
+  ));
+}
 ```

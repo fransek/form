@@ -1,0 +1,83 @@
+name: "📦 Publish PR Package"
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+
+permissions:
+  contents: read
+  issues: write
+  packages: write
+  pull-requests: write
+
+concurrency:
+  group: publish-pr-package-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    name: Publish package preview
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build package
+        run: pnpm build
+
+      - name: Set preview version
+        id: preview-version
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          RUN_NUMBER: ${{ github.run_number }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: node .github/scripts/set-pr-preview-version.cjs
+
+      - name: Configure GitHub Packages auth
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@${{ github.repository_owner }}"
+
+      - name: Publish to GitHub Packages
+        run: pnpm publish --registry https://npm.pkg.github.com --no-git-checks --tag pr-${{ github.event.pull_request.number }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Comment package link on PR
+        uses: actions/github-script@v7
+        env:
+          PACKAGE_NAME: ${{ steps.preview-version.outputs.name }}
+          PACKAGE_VERSION: ${{ steps.preview-version.outputs.version }}
+        with:
+          script: |
+            const path = require("node:path");
+
+            await require(
+              path.join(
+                process.env.GITHUB_WORKSPACE,
+                ".github/scripts/comment-pr-package.cjs",
+              ),
+            )({
+              context,
+              github,
+              process,
+            });
