@@ -168,7 +168,7 @@ export type SubmitContext = {
   commit: (options?: CommitOptions) => boolean;
 };
 
-export type Snapshot<T> = {
+export type ValidationResult<T> = {
   value: T;
   errorMessage: React.ReactNode;
 };

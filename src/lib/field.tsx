@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useId, useRef } from "react";
+import { ReactNode, useCallback, useEffect, useId, useRef } from "react";
 import {
   getAsyncValidationError,
   getAsyncValidators,
@@ -22,7 +22,7 @@ import {
   FieldProps,
   FieldState,
 } from "./types";
-import { useCacheValidation } from "./use-cache-validation";
+import { useMemoizedValidation } from "./use-memoized-validation";
 
 /**
  * A headless form field component that manages validation state using a render prop pattern.
@@ -51,10 +51,13 @@ export function Field<T>(props: FieldProps<T>) {
     skipAsyncValidationOnSubmit = formSkipAsyncValidationOnSubmit ?? false,
   } = props;
 
-  const { validation, resetSnapshots } = useCacheValidation(validationProp);
+  const { validation, invalidate } = useMemoizedValidation(validationProp);
 
   const stateRef = useRef(state);
+
+  // eslint-disable-next-line react-hooks/refs
   stateRef.current = state;
+
   const validationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -68,9 +71,12 @@ export function Field<T>(props: FieldProps<T>) {
   const fieldRef = useRef<HTMLElement | null>(null);
   const id = useId();
 
-  function updateState(overrides: Partial<FieldState<T>>) {
-    onChange({ ...stateRef.current, ...overrides });
-  }
+  const updateState = useCallback(
+    (overrides: Partial<FieldState<T>>) => {
+      onChange({ ...stateRef.current, ...overrides });
+    },
+    [onChange],
+  );
 
   useEffect(() => {
     async function performValidation() {
@@ -129,18 +135,18 @@ export function Field<T>(props: FieldProps<T>) {
     isValidatingOnChangeRef.current = false;
   }
 
-  function getChangedHooks() {
-    const currentDependenciesByHook = getDependenciesByHook(validation);
-    const previousDependenciesByHook = previousDependenciesRef.current;
-    previousDependenciesRef.current = currentDependenciesByHook;
-    const changedHooks = getChangedDependencyHooks(
-      previousDependenciesByHook,
-      currentDependenciesByHook,
-    );
-    return changedHooks;
-  }
-
   useEffect(() => {
+    function getChangedHooks() {
+      const currentDependenciesByHook = getDependenciesByHook(validation);
+      const previousDependenciesByHook = previousDependenciesRef.current;
+      previousDependenciesRef.current = currentDependenciesByHook;
+      const changedHooks = getChangedDependencyHooks(
+        previousDependenciesByHook,
+        currentDependenciesByHook,
+      );
+      return changedHooks;
+    }
+
     async function runDependencyValidation(
       changedHooks: DependencyValidationHook[],
     ) {
@@ -194,13 +200,13 @@ export function Field<T>(props: FieldProps<T>) {
       return;
     }
 
-    resetSnapshots(changedHooks);
+    invalidate(changedHooks);
 
     if (!shouldValidate(stateRef.current, validationMode)) {
       return;
     }
     void runDependencyValidation(changedHooks);
-  }, [validation, validationMode, updateState]);
+  }, [validation, validationMode, updateState, invalidate]);
 
   useEffect(() => {
     return () => {
@@ -349,8 +355,9 @@ export function Field<T>(props: FieldProps<T>) {
     fieldRef.current = el;
   };
 
+  // eslint-disable-next-line react-hooks/refs
   return children({
-    ...stateRef.current,
+    ...state,
     handleChange,
     handleBlur,
     ref,
