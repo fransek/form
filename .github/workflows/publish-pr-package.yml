@@ -24,4 +24,4 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - run: pnpm exec pkg-pr-new publish --commentWithSha --template './apps/demo'
+      - run: pnpm exec pkg-pr-new publish --commentWithSha --template './apps/sandbox'
