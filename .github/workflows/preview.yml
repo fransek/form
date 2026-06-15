@@ -1,4 +1,4 @@
-name: "📦 Publish PR Package"
+name: "📦 Publish Preview"
 
 on: [push, pull_request]
 
@@ -25,4 +25,4 @@ jobs:
         run: pnpm build
 
       - name: Publish
-        run: pnpm exec pkg-pr-new publish --commentWithSha --template './apps/sandbox'
+        run: pnpm exec pkg-pr-new publish --commentWithSha --template './apps/demo'
