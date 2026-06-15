@@ -94,7 +94,10 @@ export default function App() {
             if (!val) {
               return "Required";
             }
-            if (formData.max.value && val > formData.max.value) {
+            if (
+              formData.max.value &&
+              Number(val) > Number(formData.max.value)
+            ) {
               return "Min must be less than or equal to Max";
             }
           },
@@ -106,10 +109,7 @@ export default function App() {
             type="number"
             label="Min"
             name="min"
-            onChange={(e) => {
-              console.log(e.target.value);
-              field.handleChange(e.target.value);
-            }}
+            onChange={(e) => field.handleChange(e.target.value)}
             onBlur={field.handleBlur}
             isValidating={field.isValidating}
             errorMessage={field.errorMessage}
@@ -127,7 +127,10 @@ export default function App() {
             if (!val) {
               return "Required";
             }
-            if (formData.min.value && val < formData.min.value) {
+            if (
+              formData.min.value &&
+              Number(val) < Number(formData.min.value)
+            ) {
               return "Max must be greater than or equal to Min";
             }
           },
@@ -139,10 +142,7 @@ export default function App() {
             type="number"
             label="Max"
             name="max"
-            onChange={(e) => {
-              console.log(e.target.value);
-              field.handleChange(e.target.value);
-            }}
+            onChange={(e) => field.handleChange(e.target.value)}
             onBlur={field.handleBlur}
             isValidating={field.isValidating}
             errorMessage={field.errorMessage}
