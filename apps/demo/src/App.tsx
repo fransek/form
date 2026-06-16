@@ -1,37 +1,25 @@
-import { createFieldState, Field, Form } from '@fransek/form';
-import React from 'react';
-import { Input } from './components/Input';
-import { Select } from './components/Select';
-
-function delay<T>(value: T, ms = 300): Promise<T> {
-  return new Promise((resolve) => setTimeout(() => resolve(value), ms));
-}
-
-function required(value: unknown) {
-  return value ? undefined : 'Required';
-}
-
-function initialFormData() {
-  return {
-    name: createFieldState(''),
-    role: createFieldState(''),
-    min: createFieldState(''),
-    max: createFieldState(''),
-    acceptTerms: createFieldState(false),
-  };
-}
+import { createFieldState, Field, Form } from "@fransek/form";
+import React from "react";
+import { Input } from "./components/Input";
+import { Select } from "./components/Select";
 
 export default function App() {
   const [formData, setFormData] = React.useState(initialFormData());
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const responseRef = React.useRef<SubmitResponse | null>(null);
 
   return (
     <Form
       onSubmit={async ({ event, validate, commit }) => {
         event.preventDefault();
         setIsSubmitting(true);
+        responseRef.current = null;
         if (await validate()) {
-          alert('Form submitted!');
+          const response = await submit(formData);
+          responseRef.current = response;
+          if (response.ok) {
+            alert("Form submitted!");
+          }
         }
         commit();
         setIsSubmitting(false);
@@ -43,11 +31,14 @@ export default function App() {
         onChange={(name) => setFormData((state) => ({ ...state, name }))}
         validation={{
           onChange: required,
+          onCommit: () =>
+            responseRef.current?.errors.find((error) => error.field === "name")
+              ?.message,
           onChangeAsync: (val) =>
             delay(
-              val.toLowerCase() === 'john'
-                ? 'This name is already taken'
-                : undefined
+              val.toLowerCase() === "john"
+                ? "This name is already taken"
+                : undefined,
             ),
         }}
       >
@@ -64,7 +55,36 @@ export default function App() {
           />
         )}
       </Field>
-
+      <br />
+      <Field
+        state={formData.age}
+        onChange={(age) => setFormData((state) => ({ ...state, age }))}
+        validation={{
+          onChange: (val) => {
+            if (!val) {
+              return "Required";
+            }
+            if (formData.role.value === "admin" && Number(val) < 18) {
+              return "Admins must be at least 18 years old";
+            }
+          },
+          onChangeDependencies: [formData.role.value],
+        }}
+      >
+        {(field) => (
+          <Input
+            type="number"
+            label="Age"
+            name="age"
+            value={field.value}
+            onChange={(e) => field.handleChange(e.target.value)}
+            onBlur={field.handleBlur}
+            errorMessage={field.errorMessage}
+            ref={field.ref}
+          />
+        )}
+      </Field>
+      <br />
       <Field
         state={formData.role}
         onChange={(role) => setFormData((state) => ({ ...state, role }))}
@@ -89,73 +109,7 @@ export default function App() {
           </Select>
         )}
       </Field>
-
-      <Field
-        state={formData.min}
-        onChange={(min) => setFormData((state) => ({ ...state, min: min }))}
-        validationMode="dirty"
-        validation={{
-          onChange: (val) => {
-            if (!val) {
-              return 'Required';
-            }
-            if (
-              formData.max.value &&
-              Number(val) > Number(formData.max.value)
-            ) {
-              return 'Min must be less than or equal to Max';
-            }
-          },
-          onChangeDependencies: [formData.max.value],
-        }}
-      >
-        {(field) => (
-          <Input
-            type="number"
-            label="Min"
-            name="min"
-            value={field.value}
-            onChange={(e) => field.handleChange(e.target.value)}
-            onBlur={field.handleBlur}
-            errorMessage={field.errorMessage}
-            ref={field.ref}
-          />
-        )}
-      </Field>
-
-      <Field
-        state={formData.max}
-        onChange={(max) => setFormData((state) => ({ ...state, max }))}
-        validationMode="dirty"
-        validation={{
-          onChange: (val) => {
-            if (!val) {
-              return 'Required';
-            }
-            if (
-              formData.min.value &&
-              Number(val) < Number(formData.min.value)
-            ) {
-              return 'Max must be greater than or equal to Min';
-            }
-          },
-          onChangeDependencies: [formData.min.value],
-        }}
-      >
-        {(field) => (
-          <Input
-            type="number"
-            label="Max"
-            name="max"
-            value={field.value}
-            onChange={(e) => field.handleChange(e.target.value)}
-            onBlur={field.handleBlur}
-            errorMessage={field.errorMessage}
-            ref={field.ref}
-          />
-        )}
-      </Field>
-
+      <br />
       <Field
         state={formData.acceptTerms}
         onChange={(acceptTerms) =>
@@ -179,10 +133,54 @@ export default function App() {
           />
         )}
       </Field>
-      <button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? 'Submitting...' : 'Submit'}
+      <br />
+      <button
+        type="submit"
+        disabled={
+          isSubmitting ||
+          Object.values(formData).some((field) => !field.isValid)
+        }
+      >
+        {isSubmitting ? "Submitting..." : "Submit"}
       </button>
       <button type="reset">Reset</button>
     </Form>
   );
+}
+
+function initialFormData() {
+  return {
+    name: createFieldState(""),
+    role: createFieldState(""),
+    age: createFieldState(""),
+    acceptTerms: createFieldState(false),
+  };
+}
+
+function delay<T>(value: T, ms = 300): Promise<T> {
+  return new Promise((resolve) => setTimeout(() => resolve(value), ms));
+}
+
+function required(value: unknown) {
+  return value ? undefined : "Required";
+}
+
+interface SubmitResponse {
+  ok: boolean;
+  errors: { field: string; message: string }[];
+}
+
+async function submit(
+  formData: ReturnType<typeof initialFormData>,
+): Promise<SubmitResponse> {
+  const errors: { field: string; message: string }[] = [];
+
+  if (formData.name.value.toLowerCase() === "admin") {
+    errors.push({ field: "name", message: "This name is not allowed" });
+  }
+
+  return delay({
+    ok: errors.length === 0,
+    errors,
+  });
 }

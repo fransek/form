@@ -16,12 +16,12 @@ export const Input = ({
 
   return (
     <div>
-      {label && <label htmlFor={id}>{label}</label>}{" "}
+      {label && <label htmlFor={id}>{label} </label>}
       <input id={id} {...props} />
       {errorMessage ? (
-        <span style={{ color: "red" }}>{errorMessage}</span>
+        <span style={{ color: "red" }}> {errorMessage}</span>
       ) : isValidating ? (
-        <span style={{ color: "gray" }}>Validating...</span>
+        <span style={{ color: "gray" }}> Validating...</span>
       ) : null}
     </div>
   );
