@@ -33,6 +33,7 @@ export function Field<T>(props: FieldProps<T>) {
   const {
     registerField,
     deregisterField,
+    store,
     validationMode: formValidationMode,
     debounceMs: formDebounceMs,
     skipAsyncValidationOnSubmit: formSkipAsyncValidationOnSubmit,
@@ -71,6 +72,22 @@ export function Field<T>(props: FieldProps<T>) {
     },
     [onChange],
   );
+
+  useEffect(() => {
+    store.setFieldStatus(id, {
+      isValid: state.isValid,
+      isValidating: state.isValidating,
+      isDirty: state.isDirty,
+      isTouched: state.isTouched,
+    });
+  }, [
+    store,
+    id,
+    state.isValid,
+    state.isValidating,
+    state.isDirty,
+    state.isTouched,
+  ]);
 
   useEffect(() => {
     async function validateField() {

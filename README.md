@@ -12,12 +12,13 @@ npm install @fransek/form
 
 `@fransek/form` is a headless form library for React. It manages field state and validation without rendering any UI — you stay in full control of markup and styling.
 
-The entire API is two components and three utilities:
+The entire API is three components and three utilities:
 
 | Export                                    | Description                                                              |
 | ----------------------------------------- | ------------------------------------------------------------------------ |
 | `<Form>`                                  | Wraps a `<form>`, coordinates submit-time validation across all fields   |
 | `<Field>`                                 | Headless field component. Manages validation lifecycle via a render prop |
+| `<FormState>`                             | Exposes the aggregate form state (errors, validating, submitting) via a render prop |
 | `createFieldState(initialValue)`          | Creates the initial `FieldState` for a field                             |
 | `validate(state, validators, mode?)`      | Runs synchronous validators outside of a `<Field>`                       |
 | `validateAsync(state, validators, mode?)` | Runs async validators outside of a `<Field>`                             |
@@ -208,6 +209,50 @@ matching `*Dependencies` array whenever a validator also depends on external
 state and should be revalidated when that state changes. `commit` then applies
 pending validation state updates, runs `onCommit`
 validators, and optionally focuses the first invalid field.
+
+## Form State
+
+`<FormState>` reads the aggregate state of the form and exposes it through a
+render prop. Render it anywhere inside a `<Form>` — for example to disable the
+submit button while the form has errors or is submitting, without re-rendering
+the rest of the form.
+
+```tsx
+<Form
+  onSubmit={async ({ event, validate }) => {
+    event.preventDefault();
+    if (await validate()) {
+      await saveToServer();
+    }
+  }}
+>
+  {/* ...fields... */}
+
+  <FormState>
+    {({ hasErrors, isValidating, isSubmitting }) => (
+      <button type="submit" disabled={hasErrors || isValidating || isSubmitting}>
+        {isSubmitting ? "Submitting…" : "Submit"}
+      </button>
+    )}
+  </FormState>
+</Form>
+```
+
+The render function receives a `FormStateValue` aggregated from every `<Field>`
+in the form:
+
+```ts
+interface FormStateValue {
+  hasErrors: boolean; // any field currently has a validation error
+  isValidating: boolean; // any field is currently running async validation
+  isSubmitting: boolean; // the onSubmit handler returned a pending promise
+  isDirty: boolean; // any field has been changed
+  isTouched: boolean; // any field has been touched
+}
+```
+
+`isSubmitting` is driven by the return value of `onSubmit`: when the handler
+returns a promise, the form is considered submitting until that promise settles.
 
 ## Render Props
 

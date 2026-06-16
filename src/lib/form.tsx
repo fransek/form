@@ -1,11 +1,13 @@
-import React, { useCallback, useRef } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { focusFirstError } from "./focus-first-error";
+import { createFormStore } from "./form-store";
 import {
   CommitOptions,
   FieldHooks,
   FieldMap,
   FormContextValue,
   FormProps,
+  FormStore,
 } from "./types";
 
 /**
@@ -24,13 +26,19 @@ export function Form({
 }: FormProps) {
   const fieldsRef = useRef<FieldMap>(new Map());
 
+  const [store] = useState<FormStore>(createFormStore);
+
   const registerField = useCallback((id: string, hooks: FieldHooks) => {
     fieldsRef.current.set(id, hooks);
   }, []);
 
-  const deregisterField = useCallback((id: string) => {
-    fieldsRef.current.delete(id);
-  }, []);
+  const deregisterField = useCallback(
+    (id: string) => {
+      fieldsRef.current.delete(id);
+      store.removeFieldStatus(id);
+    },
+    [store],
+  );
 
   const getFields = useCallback(
     () => Array.from(fieldsRef.current.values()),
@@ -75,6 +83,17 @@ export function Form({
     fields.forEach((field) => field.cancel());
   }, [getFields]);
 
+  const handleSubmit = useCallback(
+    (event: React.SubmitEvent<HTMLFormElement>) => {
+      const result = onSubmit?.({ event, validate, commit, cancel });
+      if (result instanceof Promise) {
+        store.setSubmitting(true);
+        result.finally(() => store.setSubmitting(false));
+      }
+    },
+    [onSubmit, validate, commit, cancel, store],
+  );
+
   return (
     <FormContext.Provider
       value={{
@@ -83,12 +102,10 @@ export function Form({
         validationMode,
         debounceMs,
         skipAsyncValidationOnSubmit,
+        store,
       }}
     >
-      <form
-        onSubmit={(event) => onSubmit?.({ event, validate, commit, cancel })}
-        {...props}
-      />
+      <form onSubmit={handleSubmit} {...props} />
     </FormContext.Provider>
   );
 }
@@ -96,6 +113,7 @@ export function Form({
 export const FormContext = React.createContext<FormContextValue>({
   registerField: () => {},
   deregisterField: () => {},
+  store: createFormStore(),
 });
 
 export function useFormContext() {

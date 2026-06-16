@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { vi } from "vitest";
 import { Field } from "./field";
 import { FormContext } from "./form";
+import { createFormStore } from "./form-store";
 import { createFieldState } from "./state-utils";
 import {
   asyncMinLengthValidator,
@@ -825,6 +826,7 @@ describe("Field", () => {
               validationMode: "touchedAndDirty",
               debounceMs: 0,
               skipAsyncValidationOnSubmit,
+              store: createFormStore(),
             }}
           >
             <Field<string>

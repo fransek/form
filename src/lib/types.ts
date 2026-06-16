@@ -106,6 +106,54 @@ export interface FormContextValue {
   registerField: (id: string, hooks: FieldHooks) => void;
   /** Deregisters a field from the form. */
   deregisterField: (id: string) => void;
+  /** Store tracking the aggregate state of the form, consumed by {@link FormState}. */
+  store: FormStore;
+}
+
+/** The current status of a single field, reported to the parent form. */
+export interface FieldStatus {
+  /** Whether the field is currently valid. */
+  isValid: boolean;
+  /** Whether the field is currently being validated. */
+  isValidating: boolean;
+  /** Whether the value of the field has been changed by the user. */
+  isDirty: boolean;
+  /** Whether the field has been touched by the user. */
+  isTouched: boolean;
+}
+
+/** The aggregate state of all fields within a {@link Form}. */
+export interface FormStateValue {
+  /** Whether any field in the form currently has a validation error. */
+  hasErrors: boolean;
+  /** Whether any field in the form is currently being validated. */
+  isValidating: boolean;
+  /** Whether the form is currently submitting. `true` while the `onSubmit` handler's returned promise is pending. */
+  isSubmitting: boolean;
+  /** Whether any field has been changed by the user. */
+  isDirty: boolean;
+  /** Whether any field has been touched by the user. */
+  isTouched: boolean;
+}
+
+/** A store that tracks the aggregate {@link FormStateValue} of a form. */
+export interface FormStore {
+  /** Subscribes to changes in the form state. Returns an unsubscribe function. */
+  subscribe: (listener: () => void) => () => void;
+  /** Returns the current form state snapshot. */
+  getSnapshot: () => FormStateValue;
+  /** Reports the current status of a field. */
+  setFieldStatus: (id: string, status: FieldStatus) => void;
+  /** Removes a field's status from the form state. */
+  removeFieldStatus: (id: string) => void;
+  /** Sets whether the form is currently submitting. */
+  setSubmitting: (isSubmitting: boolean) => void;
+}
+
+/** Props for the {@link FormState} component. */
+export interface FormStateProps {
+  /** Render function that receives the aggregate {@link FormStateValue} of the form. */
+  children: (state: FormStateValue) => React.ReactNode;
 }
 
 export interface FieldHooks {
@@ -136,8 +184,13 @@ export interface FormProps extends Omit<
   debounceMs?: number;
   /** If `true`, submit-time validation skips `onChangeAsync` and `onBlurAsync` by default for all fields. */
   skipAsyncValidationOnSubmit?: boolean;
-  /** Callback invoked when the form is submitted. */
-  onSubmit?: (context: SubmitContext) => void;
+  /**
+   * Callback invoked when the form is submitted.
+   *
+   * If it returns a promise, the form is considered to be submitting until that
+   * promise settles. This is reflected by `isSubmitting` in {@link FormState}.
+   */
+  onSubmit?: (context: SubmitContext) => void | Promise<unknown>;
 }
 
 export type DependencyValidationHook =
