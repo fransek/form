@@ -36,7 +36,10 @@ export default function App() {
         commit();
         setIsSubmitting(false);
       }}
-      onReset={(event) => {event.preventDefault(); setFormData(initialFormData())}}
+      onReset={(event) => {
+        event.preventDefault(); 
+        setFormData(initialFormData());
+      }}
     >
       <Field
         state={formData.name}
