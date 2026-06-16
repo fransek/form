@@ -1,22 +1,22 @@
-import { createFieldState, Field, Form } from "@fransek/form";
-import React from "react";
-import { Input } from "./components/Input";
-import { Select } from "./components/Select";
+import { createFieldState, Field, Form } from '@fransek/form';
+import React from 'react';
+import { Input } from './components/Input';
+import { Select } from './components/Select';
 
 function delay<T>(value: T, ms = 300): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(value), ms));
 }
 
 function required(value: unknown) {
-  return value ? undefined : "Required";
+  return value ? undefined : 'Required';
 }
 
 function initialFormData() {
   return {
-    name: createFieldState(""),
-    role: createFieldState(""),
-    min: createFieldState(""),
-    max: createFieldState(""),
+    name: createFieldState(''),
+    role: createFieldState(''),
+    min: createFieldState(''),
+    max: createFieldState(''),
     acceptTerms: createFieldState(false),
   };
 }
@@ -31,15 +31,12 @@ export default function App() {
         event.preventDefault();
         setIsSubmitting(true);
         if (await validate()) {
-          alert("Form submitted!");
+          alert('Form submitted!');
         }
         commit();
         setIsSubmitting(false);
       }}
-      onReset={(event) => {
-        event.preventDefault(); 
-        setFormData(initialFormData());
-      }}
+      onReset={() => setFormData(initialFormData())}
     >
       <Field
         state={formData.name}
@@ -47,13 +44,18 @@ export default function App() {
         validation={{
           onChange: required,
           onChangeAsync: (val) =>
-            delay(val === "john" ? "This name is already taken" : undefined),
+            delay(
+              val.toLowerCase() === 'john'
+                ? 'This name is already taken'
+                : undefined
+            ),
         }}
       >
         {(field) => (
           <Input
             label="Name"
             name="name"
+            value={field.value}
             onChange={(e) => field.handleChange(e.target.value)}
             onBlur={field.handleBlur}
             isValidating={field.isValidating}
@@ -75,9 +77,9 @@ export default function App() {
           <Select
             label="Role"
             name="role"
+            value={field.value}
             onChange={(e) => field.handleChange(e.target.value)}
             onBlur={field.handleBlur}
-            isValidating={field.isValidating}
             errorMessage={field.errorMessage}
             ref={field.ref}
           >
@@ -95,13 +97,13 @@ export default function App() {
         validation={{
           onChange: (val) => {
             if (!val) {
-              return "Required";
+              return 'Required';
             }
             if (
               formData.max.value &&
               Number(val) > Number(formData.max.value)
             ) {
-              return "Min must be less than or equal to Max";
+              return 'Min must be less than or equal to Max';
             }
           },
           onChangeDependencies: [formData.max.value],
@@ -112,9 +114,9 @@ export default function App() {
             type="number"
             label="Min"
             name="min"
+            value={field.value}
             onChange={(e) => field.handleChange(e.target.value)}
             onBlur={field.handleBlur}
-            isValidating={field.isValidating}
             errorMessage={field.errorMessage}
             ref={field.ref}
           />
@@ -128,13 +130,13 @@ export default function App() {
         validation={{
           onChange: (val) => {
             if (!val) {
-              return "Required";
+              return 'Required';
             }
             if (
               formData.min.value &&
               Number(val) < Number(formData.min.value)
             ) {
-              return "Max must be greater than or equal to Min";
+              return 'Max must be greater than or equal to Min';
             }
           },
           onChangeDependencies: [formData.min.value],
@@ -145,9 +147,9 @@ export default function App() {
             type="number"
             label="Max"
             name="max"
+            value={field.value}
             onChange={(e) => field.handleChange(e.target.value)}
             onBlur={field.handleBlur}
-            isValidating={field.isValidating}
             errorMessage={field.errorMessage}
             ref={field.ref}
           />
@@ -169,16 +171,16 @@ export default function App() {
             type="checkbox"
             label="I accept the terms and conditions"
             name="acceptTerms"
+            checked={field.value}
             onChange={(e) => field.handleChange(e.target.checked)}
             onBlur={field.handleBlur}
-            isValidating={field.isValidating}
             errorMessage={field.errorMessage}
             ref={field.ref}
           />
         )}
       </Field>
       <button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? "Submitting..." : "Submit"}
+        {isSubmitting ? 'Submitting...' : 'Submit'}
       </button>
       <button type="reset">Reset</button>
     </Form>
