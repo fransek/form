@@ -2,7 +2,9 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React, { useEffect, useRef, useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { Field } from "./field";
 import { Form, useFormContext } from "./form";
+import { createFieldState } from "./state-utils";
 
 interface RegisteredFieldProps {
   id: string;
@@ -21,13 +23,13 @@ function RegisteredField({
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    registerField(
-      id,
-      () => ref.current,
+    registerField(id, {
+      getRef: () => ref.current,
       validate,
       validateOnCommit,
-      commitPendingValidation,
-    );
+      commit: commitPendingValidation,
+      cancel: () => {},
+    });
     return () => deregisterField(id);
   }, [
     commitPendingValidation,
@@ -218,13 +220,13 @@ describe("Form", () => {
       const [version, setVersion] = useState(0);
 
       useEffect(() => {
-        registerField(
-          "swapping-field",
-          () => ref.current,
+        registerField("swapping-field", {
+          getRef: () => ref.current,
           validate,
           validateOnCommit,
-          commitPendingValidation,
-        );
+          commit: commitPendingValidation,
+          cancel: () => {},
+        });
         return () => deregisterField("swapping-field");
       }, [deregisterField, registerField]);
 
@@ -258,6 +260,80 @@ describe("Form", () => {
 
     await waitFor(() => {
       expect(screen.getByTestId("swapping-field-1")).toHaveFocus();
+    });
+  });
+
+  it("should not reapply stale blur state after submit validation is cancelled and reset", async () => {
+    const user = userEvent.setup();
+    let blurValidationCount = 0;
+
+    function ResettingForm() {
+      const [field, setField] = useState(createFieldState(""));
+
+      return (
+        <Form
+          onSubmit={async ({ event, validate, cancel }) => {
+            event.preventDefault();
+            await validate();
+            cancel();
+            setField(createFieldState(""));
+          }}
+        >
+          <Field
+            state={field}
+            onChange={setField}
+            validation={{
+              onBlurAsync: async (value: string) => {
+                blurValidationCount += 1;
+                await new Promise((resolve) =>
+                  setTimeout(resolve, blurValidationCount === 1 ? 100 : 10),
+                );
+                return value ? "Blur error" : undefined;
+              },
+            }}
+          >
+            {({
+              errorMessage,
+              handleBlur,
+              handleChange,
+              isTouched,
+              isValidating,
+              value,
+            }) => (
+              <input
+                data-testid="resetting-input"
+                value={value}
+                onChange={(event) => handleChange(event.target.value)}
+                onBlur={handleBlur}
+                data-istouched={isTouched}
+                data-isvalidating={isValidating}
+                data-errormessage={errorMessage}
+              />
+            )}
+          </Field>
+          <button type="submit">Submit</button>
+        </Form>
+      );
+    }
+
+    render(<ResettingForm />);
+
+    const input = screen.getByTestId("resetting-input");
+
+    await user.type(input, "bad");
+    await user.tab();
+
+    await waitFor(() => {
+      expect(input).toHaveAttribute("data-isvalidating", "true");
+    });
+
+    await user.click(screen.getByRole("button", { name: "Submit" }));
+
+    await waitFor(() => {
+      expect(input).toHaveValue("");
+      expect(input).toHaveAttribute("data-istouched", "false");
+      expect(input).toHaveAttribute("data-isvalidating", "false");
+      expect(input.getAttribute("data-errormessage")).toBeNull();
     });
   });
 });

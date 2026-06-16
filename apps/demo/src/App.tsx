@@ -1,4 +1,9 @@
-import { createFieldState, Field, Form } from "@fransek/form";
+import {
+  createFieldState,
+  Field,
+  Form,
+  type SubmitContext,
+} from "@fransek/form";
 import React from "react";
 import { Input } from "./components/Input";
 import { Select } from "./components/Select";
@@ -8,22 +13,31 @@ export default function App() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const responseRef = React.useRef<SubmitResponse | null>(null);
 
+  async function handleSubmit({
+    event,
+    validate,
+    commit,
+    cancel,
+  }: SubmitContext) {
+    event.preventDefault();
+    setIsSubmitting(true);
+    responseRef.current = null;
+    if (await validate()) {
+      const response = await submit(formData);
+      responseRef.current = response;
+      if (response.ok) {
+        alert("Form submitted!");
+        cancel();
+        setFormData(initialFormData());
+      }
+    }
+    commit();
+    setIsSubmitting(false);
+  }
+
   return (
     <Form
-      onSubmit={async ({ event, validate, commit }) => {
-        event.preventDefault();
-        setIsSubmitting(true);
-        responseRef.current = null;
-        if (await validate()) {
-          const response = await submit(formData);
-          responseRef.current = response;
-          if (response.ok) {
-            alert("Form submitted!");
-          }
-        }
-        commit();
-        setIsSubmitting(false);
-      }}
+      onSubmit={handleSubmit}
       onReset={() => setFormData(initialFormData())}
     >
       <Field

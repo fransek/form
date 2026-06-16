@@ -103,26 +103,20 @@ export interface FormContextValue {
   /** Default submit-time async-skip behavior applied to all fields. */
   skipAsyncValidationOnSubmit?: boolean;
   /** Registers a field with the form for submit validation. */
-  registerField: (
-    id: string,
-    getRef: () => HTMLElement | null,
-    validate: () => Promise<boolean>,
-    validateOnCommit: () => boolean,
-    commitPendingValidation: () => void,
-  ) => void;
+  registerField: (id: string, hooks: FieldHooks) => void;
   /** Deregisters a field from the form. */
   deregisterField: (id: string) => void;
 }
 
-export type FieldMap = Map<
-  string,
-  {
-    getRef: () => HTMLElement | null;
-    validate: () => Promise<boolean>;
-    validateOnCommit: () => boolean;
-    commitPendingValidation: () => void;
-  }
->;
+export interface FieldHooks {
+  getRef: () => HTMLElement | null;
+  validate: () => Promise<boolean>;
+  validateOnCommit: () => boolean;
+  commit: () => void;
+  cancel: () => void;
+}
+
+export type FieldMap = Map<string, FieldHooks>;
 
 export interface CommitOptions {
   /** If `true`, the first invalid field will be focused after validation. Defaults to `true`. */
@@ -158,8 +152,10 @@ export type DependenciesByHook = Partial<
 
 export type SubmitContext = {
   event: React.SubmitEvent<HTMLFormElement>;
-  /** Runs submit-time validation for all registered fields. */
+  /** Runs submit-time validation for all registered fields without committing validation state changes. Returns `true` if all fields are valid. */
   validate: () => Promise<boolean>;
   /** Runs `onCommit` validations and commits pending validation state changes. */
   commit: (options?: CommitOptions) => boolean;
+  /** Cancels any pending validation state changes. */
+  cancel: () => void;
 };

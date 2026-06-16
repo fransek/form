@@ -1,6 +1,12 @@
 import React, { useCallback, useRef } from "react";
 import { focusFirstError } from "./focus-first-error";
-import { CommitOptions, FieldMap, FormContextValue, FormProps } from "./types";
+import {
+  CommitOptions,
+  FieldHooks,
+  FieldMap,
+  FormContextValue,
+  FormProps,
+} from "./types";
 
 /**
  * A form component that provides context for coordinating field validation.
@@ -18,57 +24,56 @@ export function Form({
 }: FormProps) {
   const fieldsRef = useRef<FieldMap>(new Map());
 
-  const registerField = useCallback(
-    (
-      id: string,
-      getRef: () => HTMLElement | null,
-      validate: () => Promise<boolean>,
-      validateOnCommit: () => boolean,
-      commitPendingValidation: () => void,
-    ) => {
-      fieldsRef.current.set(id, {
-        getRef,
-        validate,
-        validateOnCommit,
-        commitPendingValidation,
-      });
-    },
-    [],
-  );
+  const registerField = useCallback((id: string, hooks: FieldHooks) => {
+    fieldsRef.current.set(id, hooks);
+  }, []);
 
   const deregisterField = useCallback((id: string) => {
     fieldsRef.current.delete(id);
   }, []);
 
+  const getFields = useCallback(
+    () => Array.from(fieldsRef.current.values()),
+    [],
+  );
+
   const validate = useCallback(async () => {
-    const fields = Array.from(fieldsRef.current.values());
+    const fields = getFields();
     const validationPromises = fields.map((field) => field.validate());
     const results = await Promise.all(validationPromises);
     return results.every(Boolean);
-  }, []);
+  }, [getFields]);
 
-  const commit = useCallback((options: CommitOptions = {}) => {
-    const {
-      focusFirstError: shouldFocusFirstError = true,
-      scrollOffset = 100,
-    } = options;
+  const commit = useCallback(
+    (options: CommitOptions = {}) => {
+      const {
+        focusFirstError: shouldFocusFirstError = true,
+        scrollOffset = 100,
+      } = options;
 
-    const fields = Array.from(fieldsRef.current.values());
-    const results = fields.map((field) => ({
-      isValid: field.validateOnCommit(),
-      ref: field.getRef(),
-    }));
+      const fields = getFields();
+      const results = fields.map((field) => ({
+        isValid: field.validateOnCommit(),
+        ref: field.getRef(),
+      }));
 
-    const hasErrors = results.some((result) => !result.isValid);
+      const hasErrors = results.some((result) => !result.isValid);
 
-    fields.forEach((field) => field.commitPendingValidation());
+      fields.forEach((field) => field.commit());
 
-    if (hasErrors && shouldFocusFirstError) {
-      focusFirstError(results, scrollOffset);
-    }
+      if (hasErrors && shouldFocusFirstError) {
+        focusFirstError(results, scrollOffset);
+      }
 
-    return !hasErrors;
-  }, []);
+      return !hasErrors;
+    },
+    [getFields],
+  );
+
+  const cancel = useCallback(() => {
+    const fields = getFields();
+    fields.forEach((field) => field.cancel());
+  }, [getFields]);
 
   return (
     <FormContext.Provider
@@ -81,7 +86,7 @@ export function Form({
       }}
     >
       <form
-        onSubmit={(event) => onSubmit?.({ event, validate, commit })}
+        onSubmit={(event) => onSubmit?.({ event, validate, commit, cancel })}
         {...props}
       />
     </FormContext.Provider>

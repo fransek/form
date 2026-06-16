@@ -801,7 +801,8 @@ describe("Field", () => {
       const registrations: {
         validate?: () => Promise<boolean>;
         validateOnCommit?: () => boolean;
-        commitPendingValidation?: () => void;
+        commit?: () => void;
+        cancel?: () => void;
       } = {};
       const onChangeSpy = vi.fn();
       const TestField = () => {
@@ -809,21 +810,17 @@ describe("Field", () => {
         return (
           <FormContext.Provider
             value={{
-              registerField: (
-                _id,
-                _ref,
-                validate,
-                validateOnCommit,
-                commitPendingValidation,
-              ) => {
-                registrations.validate = validate;
-                registrations.validateOnCommit = validateOnCommit;
-                registrations.commitPendingValidation = commitPendingValidation;
+              registerField: (_id, hooks) => {
+                registrations.validate = hooks.validate;
+                registrations.validateOnCommit = hooks.validateOnCommit;
+                registrations.commit = hooks.commit;
+                registrations.cancel = hooks.cancel;
               },
               deregisterField: () => {
                 registrations.validate = undefined;
                 registrations.validateOnCommit = undefined;
-                registrations.commitPendingValidation = undefined;
+                registrations.commit = undefined;
+                registrations.cancel = undefined;
               },
               validationMode: "touchedAndDirty",
               debounceMs: 0,
@@ -879,7 +876,7 @@ describe("Field", () => {
       await act(async () => {
         validationResult = await registrations.validate!();
       });
-      await act(async () => registrations.commitPendingValidation?.());
+      await act(async () => registrations.commit?.());
 
       expect(validationResult).toBe(true);
       expect(onChange).toHaveBeenCalledWith("abc");
@@ -913,7 +910,7 @@ describe("Field", () => {
       expect(isValid).toBe(false);
       expect(asyncSubmit).toHaveBeenCalledWith("abc");
 
-      await act(async () => registrations.commitPendingValidation?.());
+      await act(async () => registrations.commit?.());
 
       expect(onChangeSpy.mock.calls.length).toBe(callsBeforeValidate + 1);
       const committedState =
@@ -1045,7 +1042,7 @@ describe("Field", () => {
       expect(isValidOnCommit).toBe(false);
       expect(onCommit).toHaveBeenCalledWith("abc");
 
-      await act(async () => registrations.commitPendingValidation?.());
+      await act(async () => registrations.commit?.());
       expect(onChangeSpy).toHaveBeenCalledTimes(1);
       const committedState = onChangeSpy.mock.calls[0][0];
       expect(committedState.errorMessage).toBe("Commit error");

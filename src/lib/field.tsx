@@ -50,7 +50,6 @@ export function Field<T>(props: FieldProps<T>) {
 
   const stateRef = useRef(state);
 
-  // eslint-disable-next-line react-hooks/refs
   stateRef.current = state;
 
   const validationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
@@ -74,7 +73,7 @@ export function Field<T>(props: FieldProps<T>) {
   );
 
   useEffect(() => {
-    async function performValidation() {
+    async function validateField() {
       validationIdRef.current++;
       pendingValidationRef.current = await validateFieldState<T>(
         stateRef.current,
@@ -84,7 +83,7 @@ export function Field<T>(props: FieldProps<T>) {
       return pendingValidationRef.current.isValid;
     }
 
-    function onCommitValidation() {
+    function validateOnCommit() {
       if (pendingValidationRef.current?.isValid) {
         pendingValidationRef.current = validate(
           stateRef.current,
@@ -94,20 +93,31 @@ export function Field<T>(props: FieldProps<T>) {
       return pendingValidationRef.current?.isValid ?? true;
     }
 
-    function commitPendingValidation() {
+    function commit() {
       if (pendingValidationRef.current) {
         updateState(pendingValidationRef.current);
         pendingValidationRef.current = null;
       }
     }
 
-    registerField(
-      id,
-      () => fieldRef.current,
-      performValidation,
-      onCommitValidation,
-      commitPendingValidation,
-    );
+    function getRef() {
+      return fieldRef.current;
+    }
+
+    function cancel() {
+      if (validationTimeoutRef.current) {
+        clearValidationTimeout();
+      }
+      pendingValidationRef.current = null;
+    }
+
+    registerField(id, {
+      getRef,
+      validate: validateField,
+      validateOnCommit,
+      commit,
+      cancel,
+    });
 
     return () => {
       deregisterField(id);
@@ -344,7 +354,6 @@ export function Field<T>(props: FieldProps<T>) {
     fieldRef.current = el;
   };
 
-  // eslint-disable-next-line react-hooks/refs
   return children({
     ...state,
     handleChange,
