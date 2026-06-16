@@ -42,8 +42,6 @@ export function Field<T>(props: FieldProps<T>) {
     children,
     state,
     onChange,
-    onInput,
-    onBlur,
     validation,
     debounceMs = formDebounceMs ?? 500,
     validationMode = formValidationMode ?? "touchedAndDirty",
@@ -245,8 +243,6 @@ export function Field<T>(props: FieldProps<T>) {
   }
 
   function handleChange(value: T) {
-    onInput?.(value);
-
     if (validationTimeoutRef.current) {
       clearValidationTimeout();
     }
@@ -306,8 +302,6 @@ export function Field<T>(props: FieldProps<T>) {
   }
 
   async function handleBlur() {
-    onBlur?.();
-
     if (!shouldValidateOnBlur(stateRef.current, validationMode)) {
       updateState({ isTouched: true });
       return;

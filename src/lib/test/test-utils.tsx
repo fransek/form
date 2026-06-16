@@ -22,8 +22,6 @@ const Input = ({
   validation,
   debounceMs,
   validationMode,
-  onInput,
-  onBlur,
   initialValue = "",
 }: InputProps = {}) => {
   const [form, setForm] = useState<FormState>({
@@ -37,8 +35,6 @@ const Input = ({
       validation={validation}
       validationMode={validationMode}
       debounceMs={debounceMs}
-      onInput={onInput}
-      onBlur={onBlur}
     >
       {({
         isValid,

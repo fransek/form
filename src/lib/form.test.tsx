@@ -226,13 +226,7 @@ describe("Form", () => {
           commitPendingValidation,
         );
         return () => deregisterField("swapping-field");
-      }, [
-        registerField,
-        deregisterField,
-        validate,
-        validateOnCommit,
-        commitPendingValidation,
-      ]);
+      }, [deregisterField, registerField]);
 
       return (
         <>

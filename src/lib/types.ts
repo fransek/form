@@ -78,10 +78,6 @@ export interface FieldProps<T> {
   children: (props: FieldRenderProps<T>) => React.ReactNode;
   /** Callback invoked with the updated field state whenever the state changes. */
   onChange: (newState: FieldState<T>) => void;
-  /** Callback invoked with the raw input value on every change, before validation. */
-  onInput?: (value: T) => void;
-  /** Callback invoked when the field loses focus. */
-  onBlur?: () => void;
   /** Validator functions to run on various field events. */
   validation?: Validation<T>;
   /** Overrides the validation mode set on the parent {@link Form}. Defaults to `"touchedAndDirty"`. */
