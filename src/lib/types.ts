@@ -16,6 +16,40 @@ export interface FieldState<T> {
   isValidating: boolean;
 }
 
+/** The subset of {@link FieldState} flags the form aggregates reactively. */
+export interface FieldFlags {
+  /** Whether the field has been touched by the user. */
+  isTouched: boolean;
+  /** Whether the value of the field has been changed by the user. */
+  isDirty: boolean;
+  /** Whether the field is valid. */
+  isValid: boolean;
+  /** Whether the field is currently being validated. */
+  isValidating: boolean;
+}
+
+/** Aggregate state computed across all registered fields of a {@link Form}. */
+export interface FormAggregateState {
+  /** Whether every registered field is valid. `true` when there are no fields. */
+  isValid: boolean;
+  /** Whether at least one field has been touched. */
+  isTouched: boolean;
+  /** Whether at least one field value has been changed. */
+  isDirty: boolean;
+  /** Whether at least one field is currently being validated. */
+  isValidating: boolean;
+  /** Whether the form's `onSubmit` handler is currently running. */
+  isSubmitting: boolean;
+  /** Whether the form is valid and not currently submitting or validating. */
+  canSubmit: boolean;
+}
+
+/** Props for the {@link FormState} component. */
+export interface FormStateProps {
+  /** Render function that receives the aggregate form state. */
+  children: (state: FormAggregateState) => React.ReactNode;
+}
+
 /** Props passed to the render function of a {@link Field} component. */
 export interface FieldRenderProps<T> extends FieldState<T> {
   /** Callback to update the field value. Should be called when the input value changes. */
@@ -106,6 +140,12 @@ export interface FormContextValue {
   registerField: (id: string, hooks: FieldHooks) => void;
   /** Deregisters a field from the form. */
   deregisterField: (id: string) => void;
+  /** Reports a field's reactive flags into the form's aggregate state store. */
+  reportFieldState: (id: string, flags: FieldFlags) => void;
+  /** Subscribes a listener to aggregate state changes. Returns an unsubscribe function. */
+  subscribe: (listener: () => void) => () => void;
+  /** Returns the current aggregate state snapshot. */
+  getAggregateSnapshot: () => FormAggregateState;
 }
 
 export interface FieldHooks {
@@ -136,8 +176,8 @@ export interface FormProps extends Omit<
   debounceMs?: number;
   /** If `true`, submit-time validation skips `onChangeAsync` and `onBlurAsync` by default for all fields. */
   skipAsyncValidationOnSubmit?: boolean;
-  /** Callback invoked when the form is submitted. */
-  onSubmit?: (context: SubmitContext) => void;
+  /** Callback invoked when the form is submitted. May be async; while the returned promise is pending, the form's `isSubmitting` aggregate state is `true`. */
+  onSubmit?: (context: SubmitContext) => void | Promise<void>;
 }
 
 export type DependencyValidationHook =

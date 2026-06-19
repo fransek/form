@@ -33,6 +33,7 @@ export function Field<T>(props: FieldProps<T>) {
   const {
     registerField,
     deregisterField,
+    reportFieldState,
     validationMode: formValidationMode,
     debounceMs: formDebounceMs,
     skipAsyncValidationOnSubmit: formSkipAsyncValidationOnSubmit,
@@ -129,6 +130,22 @@ export function Field<T>(props: FieldProps<T>) {
     updateState,
     deregisterField,
     skipAsyncValidationOnSubmit,
+  ]);
+
+  useEffect(() => {
+    reportFieldState?.(id, {
+      isValid: state.isValid,
+      isTouched: state.isTouched,
+      isDirty: state.isDirty,
+      isValidating: state.isValidating,
+    });
+  }, [
+    reportFieldState,
+    id,
+    state.isValid,
+    state.isTouched,
+    state.isDirty,
+    state.isValidating,
   ]);
 
   function clearValidationTimeout() {
