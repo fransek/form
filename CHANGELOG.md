@@ -4,6 +4,21 @@
 
 [1]: https://www.npmjs.com/package/@fransek/ui?activeTab=versions
 
+## [0.7.0](https://github.com/fransek/form/compare/v0.6.0...v0.7.0) (2026-06-20)
+
+
+### Features
+
+* add FormState component for aggregate form state ([#35](https://github.com/fransek/form/issues/35)) ([870fcef](https://github.com/fransek/form/commit/870fcef377a98c25cc0d0e12b8e3a3d12bb01b0e))
+* add per-field submit-time async validation skip controls ([#27](https://github.com/fransek/form/issues/27)) ([6b1de2b](https://github.com/fransek/form/commit/6b1de2bdf05bfccd4ef69ece8f39b8659ca46cb4))
+* added `cancel()` to `SubmitContext` for cancelling pending validations ([b50cb41](https://github.com/fransek/form/commit/b50cb41a165549963e22acd481ddb17aa77e0c2b))
+
+
+### Bug Fixes
+
+* exposed `SubmitContext` `CommitOptions` types to public API ([8861b76](https://github.com/fransek/form/commit/8861b76e31e34b45aaf98dcc91052aea2688a8f1))
+* removed `onInput` and `onBlur` from `Field` component props ([7a61a28](https://github.com/fransek/form/commit/7a61a2836517d0ed0d92724568bb638c21edf8f8))
+
 ## [0.6.0](https://github.com/fransek/form/compare/v0.5.0...v0.6.0) (2026-06-05)
 
 
