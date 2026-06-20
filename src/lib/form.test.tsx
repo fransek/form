@@ -3,8 +3,9 @@ import userEvent from "@testing-library/user-event";
 import React, { useEffect, useRef, useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Field } from "./field";
-import { Form, useFormContext } from "./form";
-import { createFieldState } from "./state-utils";
+import { Form } from "./form";
+import { useFormContext } from "./form-context";
+import { createFieldState } from "./validation";
 
 interface RegisteredFieldProps {
   id: string;

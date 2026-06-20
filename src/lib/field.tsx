@@ -1,5 +1,7 @@
 import { ReactNode, useCallback, useEffect, useId, useRef } from "react";
 import {
+  DependenciesByHook,
+  DependencyValidationHook,
   getAsyncValidationError,
   getAsyncValidators,
   getChangedDependencyHooks,
@@ -7,21 +9,15 @@ import {
   getSyncValidationError,
   getSyncValidators,
 } from "./field-utils";
-import { useFormContext } from "./form";
+import { useFormContext } from "./form-context";
+import { FieldProps, FieldState } from "./types";
+import { shouldValidate, validate } from "./validation";
 import {
-  shouldValidate,
   shouldValidateChangeOnBlur,
   shouldValidateOnBlur,
   shouldValidateOnChange,
-  validate,
   validateFieldState,
-} from "./state-utils";
-import {
-  DependenciesByHook,
-  DependencyValidationHook,
-  FieldProps,
-  FieldState,
-} from "./types";
+} from "./validation-mode";
 
 /**
  * A headless form field component that manages validation state using a render prop pattern.

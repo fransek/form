@@ -129,35 +129,6 @@ export type AsyncValidator<T> = (value: T) => Promise<React.ReactNode>;
 /** A synchronous or asynchronous validator function. */
 export type Validator<T> = SyncValidator<T> | AsyncValidator<T>;
 
-export interface FormContextValue {
-  /** Default validation mode applied to all fields in the form. */
-  validationMode?: ValidationMode;
-  /** Default debounce delay in milliseconds for async validators. */
-  debounceMs?: number;
-  /** Default submit-time async-skip behavior applied to all fields. */
-  skipAsyncValidationOnSubmit?: boolean;
-  /** Registers a field with the form for submit validation. */
-  registerField: (id: string, hooks: FieldHooks) => void;
-  /** Deregisters a field from the form. */
-  deregisterField: (id: string) => void;
-  /** Reports a field's reactive flags into the form's aggregate state store. */
-  reportFieldState: (id: string, flags: FieldFlags) => void;
-  /** Subscribes a listener to aggregate state changes. Returns an unsubscribe function. */
-  subscribe: (listener: () => void) => () => void;
-  /** Returns the current aggregate state snapshot. */
-  getAggregateSnapshot: () => FormAggregateState;
-}
-
-export interface FieldHooks {
-  getRef: () => HTMLElement | null;
-  validate: () => Promise<boolean>;
-  validateOnCommit: () => boolean;
-  commit: () => void;
-  cancel: () => void;
-}
-
-export type FieldMap = Map<string, FieldHooks>;
-
 export interface CommitOptions {
   /** If `true`, the first invalid field will be focused after validation. Defaults to `true`. */
   focusFirstError?: boolean;
@@ -179,16 +150,6 @@ export interface FormProps extends Omit<
   /** Callback invoked when the form is submitted. May be async; while the returned promise is pending, the form's `isSubmitting` aggregate state is `true`. */
   onSubmit?: (context: SubmitContext) => void | Promise<void>;
 }
-
-export type DependencyValidationHook =
-  | "onChange"
-  | "onBlur"
-  | "onChangeAsync"
-  | "onBlurAsync";
-
-export type DependenciesByHook = Partial<
-  Record<DependencyValidationHook, readonly unknown[]>
->;
 
 export type SubmitContext = {
   event: React.SubmitEvent<HTMLFormElement>;
