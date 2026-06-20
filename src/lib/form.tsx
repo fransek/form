@@ -162,13 +162,15 @@ export function Form({
   }, [getFields]);
 
   const handleSubmit = useCallback(
-    (event: React.SubmitEvent<HTMLFormElement>) => {
+    async (event: React.SubmitEvent<HTMLFormElement>) => {
       const result = onSubmit?.({ event, validate, commit, cancel });
-      if (result && typeof (result as Promise<void>).then === "function") {
+      if (result instanceof Promise) {
         setIsSubmitting(true);
-        Promise.resolve(result)
-          .finally(() => setIsSubmitting(false))
-          .catch(() => {});
+        try {
+          await result;
+        } finally {
+          setIsSubmitting(false);
+        }
       }
     },
     [onSubmit, validate, commit, cancel, setIsSubmitting],

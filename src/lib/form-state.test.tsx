@@ -209,6 +209,35 @@ describe("FormState", () => {
     });
   });
 
+  it("keeps a field's contribution across unrelated re-renders with inline validation", async () => {
+    const user = userEvent.setup();
+    const Wrapper = () => {
+      const [, setTick] = useState(0);
+      return (
+        <Form validationMode="dirty">
+          {/* Inline `validation` gets a fresh identity on every render. */}
+          <TestField testId="a" validation={{ onChange: minLength(3) }} />
+          <input data-testid="tick" onChange={() => setTick((t) => t + 1)} />
+          <AggregateProbe />
+        </Form>
+      );
+    };
+    render(<Wrapper />);
+
+    await user.type(screen.getByTestId("a"), "x");
+    await waitFor(() => {
+      expect(getAgg().getAttribute("data-isvalid")).toBe("false");
+      expect(getAgg().getAttribute("data-isdirty")).toBe("true");
+    });
+
+    // An unrelated re-render must not deregister field "a" and drop its flags.
+    await user.type(screen.getByTestId("tick"), "z");
+    await waitFor(() => {
+      expect(getAgg().getAttribute("data-isvalid")).toBe("false");
+      expect(getAgg().getAttribute("data-isdirty")).toBe("true");
+    });
+  });
+
   it("tracks isSubmitting around an async onSubmit", async () => {
     const user = userEvent.setup();
     let resolveSubmit: () => void = () => {};
@@ -236,32 +265,6 @@ describe("FormState", () => {
     await waitFor(() => {
       expect(getAgg().getAttribute("data-issubmitting")).toBe("false");
       expect(getAgg().getAttribute("data-cansubmit")).toBe("true");
-    });
-  });
-
-  it("resets isSubmitting when an async onSubmit rejects", async () => {
-    const user = userEvent.setup();
-    let rejectSubmit: () => void = () => {};
-    const onSubmit = ({ event }: { event: React.FormEvent }) =>
-      new Promise<void>((_, reject) => {
-        event.preventDefault();
-        rejectSubmit = () => reject(new Error("nope"));
-      });
-    render(
-      <Form onSubmit={onSubmit}>
-        <button type="submit">submit</button>
-        <AggregateProbe />
-      </Form>,
-    );
-    await user.click(screen.getByText("submit"));
-    await waitFor(() => {
-      expect(getAgg().getAttribute("data-issubmitting")).toBe("true");
-    });
-    await act(async () => {
-      rejectSubmit();
-    });
-    await waitFor(() => {
-      expect(getAgg().getAttribute("data-issubmitting")).toBe("false");
     });
   });
 

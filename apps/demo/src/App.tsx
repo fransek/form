@@ -2,6 +2,7 @@ import {
   createFieldState,
   Field,
   Form,
+  FormState,
   type SubmitContext,
 } from "@fransek/form";
 import React from "react";
@@ -10,8 +11,11 @@ import { Select } from "./components/Select";
 
 export default function App() {
   const [formData, setFormData] = React.useState(initialFormData());
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
   const responseRef = React.useRef<SubmitResponse | null>(null);
+
+  function reset() {
+    return setFormData(initialFormData());
+  }
 
   async function handleSubmit({
     event,
@@ -20,7 +24,6 @@ export default function App() {
     cancel,
   }: SubmitContext) {
     event.preventDefault();
-    setIsSubmitting(true);
     responseRef.current = null;
     if (await validate()) {
       const response = await submit(formData);
@@ -28,18 +31,14 @@ export default function App() {
       if (response.ok) {
         alert("Form submitted!");
         cancel();
-        setFormData(initialFormData());
+        reset();
       }
     }
     commit();
-    setIsSubmitting(false);
   }
 
   return (
-    <Form
-      onSubmit={handleSubmit}
-      onReset={() => setFormData(initialFormData())}
-    >
+    <Form onSubmit={handleSubmit} onReset={reset}>
       <Field
         state={formData.name}
         onChange={(name) => setFormData((state) => ({ ...state, name }))}
@@ -148,15 +147,13 @@ export default function App() {
         )}
       </Field>
       <br />
-      <button
-        type="submit"
-        disabled={
-          isSubmitting ||
-          Object.values(formData).some((field) => !field.isValid)
-        }
-      >
-        {isSubmitting ? "Submitting..." : "Submit"}
-      </button>
+      <FormState>
+        {(state) => (
+          <button type="submit" disabled={!state.canSubmit}>
+            {state.isSubmitting ? "Submitting..." : "Submit"}
+          </button>
+        )}
+      </FormState>
       <button type="reset">Reset</button>
     </Form>
   );
