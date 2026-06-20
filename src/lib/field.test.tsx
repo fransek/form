@@ -822,6 +822,16 @@ describe("Field", () => {
                 registrations.commit = undefined;
                 registrations.cancel = undefined;
               },
+              reportFieldState: () => {},
+              subscribe: () => () => {},
+              getAggregateSnapshot: () => ({
+                isValid: true,
+                isTouched: false,
+                isDirty: false,
+                isValidating: false,
+                isSubmitting: false,
+                canSubmit: true,
+              }),
               validationMode: "touchedAndDirty",
               debounceMs: 0,
               skipAsyncValidationOnSubmit,

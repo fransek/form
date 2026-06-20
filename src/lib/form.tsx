@@ -1,12 +1,44 @@
-import React, { useCallback, useRef } from "react";
+import React, { useCallback, useMemo, useRef } from "react";
 import { focusFirstError } from "./focus-first-error";
 import {
   CommitOptions,
+  FieldFlags,
   FieldHooks,
   FieldMap,
+  FormAggregateState,
   FormContextValue,
   FormProps,
 } from "./types";
+
+const EMPTY_AGGREGATE: FormAggregateState = {
+  isValid: true,
+  isTouched: false,
+  isDirty: false,
+  isValidating: false,
+  isSubmitting: false,
+  canSubmit: true,
+};
+
+function computeAggregate(
+  flags: Map<string, FieldFlags>,
+  isSubmitting: boolean,
+): FormAggregateState {
+  let isValid = true;
+  let isTouched = false;
+  let isDirty = false;
+  let isValidating = false;
+
+  for (const field of flags.values()) {
+    if (!field.isValid) isValid = false;
+    if (field.isTouched) isTouched = true;
+    if (field.isDirty) isDirty = true;
+    if (field.isValidating) isValidating = true;
+  }
+
+  const canSubmit = isValid && !isSubmitting && !isValidating;
+
+  return { isValid, isTouched, isDirty, isValidating, isSubmitting, canSubmit };
+}
 
 /**
  * A form component that provides context for coordinating field validation.
@@ -23,14 +55,68 @@ export function Form({
   ...props
 }: FormProps) {
   const fieldsRef = useRef<FieldMap>(new Map());
+  const flagsRef = useRef<Map<string, FieldFlags>>(new Map());
+  const isSubmittingRef = useRef(false);
+  const listenersRef = useRef<Set<() => void>>(new Set());
+  const snapshotRef = useRef<FormAggregateState>(EMPTY_AGGREGATE);
+
+  const emit = useCallback(() => {
+    snapshotRef.current = computeAggregate(
+      flagsRef.current,
+      isSubmittingRef.current,
+    );
+    listenersRef.current.forEach((listener) => listener());
+  }, []);
+
+  const subscribe = useCallback((listener: () => void) => {
+    listenersRef.current.add(listener);
+    return () => {
+      listenersRef.current.delete(listener);
+    };
+  }, []);
+
+  const getAggregateSnapshot = useCallback(() => snapshotRef.current, []);
+
+  const setIsSubmitting = useCallback(
+    (value: boolean) => {
+      if (isSubmittingRef.current === value) return;
+      isSubmittingRef.current = value;
+      emit();
+    },
+    [emit],
+  );
+
+  const reportFieldState = useCallback(
+    (id: string, flags: FieldFlags) => {
+      const prev = flagsRef.current.get(id);
+      if (
+        prev &&
+        prev.isValid === flags.isValid &&
+        prev.isTouched === flags.isTouched &&
+        prev.isDirty === flags.isDirty &&
+        prev.isValidating === flags.isValidating
+      ) {
+        return;
+      }
+      flagsRef.current.set(id, flags);
+      emit();
+    },
+    [emit],
+  );
 
   const registerField = useCallback((id: string, hooks: FieldHooks) => {
     fieldsRef.current.set(id, hooks);
   }, []);
 
-  const deregisterField = useCallback((id: string) => {
-    fieldsRef.current.delete(id);
-  }, []);
+  const deregisterField = useCallback(
+    (id: string) => {
+      fieldsRef.current.delete(id);
+      if (flagsRef.current.delete(id)) {
+        emit();
+      }
+    },
+    [emit],
+  );
 
   const getFields = useCallback(
     () => Array.from(fieldsRef.current.values()),
@@ -75,20 +161,47 @@ export function Form({
     fields.forEach((field) => field.cancel());
   }, [getFields]);
 
+  const handleSubmit = useCallback(
+    async (event: React.SubmitEvent<HTMLFormElement>) => {
+      const result = onSubmit?.({ event, validate, commit, cancel });
+      if (result instanceof Promise) {
+        setIsSubmitting(true);
+        try {
+          await result;
+        } finally {
+          setIsSubmitting(false);
+        }
+      }
+    },
+    [onSubmit, validate, commit, cancel, setIsSubmitting],
+  );
+
+  const contextValue = useMemo<FormContextValue>(
+    () => ({
+      registerField,
+      deregisterField,
+      reportFieldState,
+      subscribe,
+      getAggregateSnapshot,
+      validationMode,
+      debounceMs,
+      skipAsyncValidationOnSubmit,
+    }),
+    [
+      registerField,
+      deregisterField,
+      reportFieldState,
+      subscribe,
+      getAggregateSnapshot,
+      validationMode,
+      debounceMs,
+      skipAsyncValidationOnSubmit,
+    ],
+  );
+
   return (
-    <FormContext.Provider
-      value={{
-        registerField,
-        deregisterField,
-        validationMode,
-        debounceMs,
-        skipAsyncValidationOnSubmit,
-      }}
-    >
-      <form
-        onSubmit={(event) => onSubmit?.({ event, validate, commit, cancel })}
-        {...props}
-      />
+    <FormContext.Provider value={contextValue}>
+      <form onSubmit={handleSubmit} {...props} />
     </FormContext.Provider>
   );
 }
@@ -96,6 +209,9 @@ export function Form({
 export const FormContext = React.createContext<FormContextValue>({
   registerField: () => {},
   deregisterField: () => {},
+  reportFieldState: () => {},
+  subscribe: () => () => {},
+  getAggregateSnapshot: () => EMPTY_AGGREGATE,
 });
 
 export function useFormContext() {

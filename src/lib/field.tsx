@@ -33,6 +33,7 @@ export function Field<T>(props: FieldProps<T>) {
   const {
     registerField,
     deregisterField,
+    reportFieldState,
     validationMode: formValidationMode,
     debounceMs: formDebounceMs,
     skipAsyncValidationOnSubmit: formSkipAsyncValidationOnSubmit,
@@ -49,9 +50,6 @@ export function Field<T>(props: FieldProps<T>) {
   } = props;
 
   const stateRef = useRef(state);
-
-  stateRef.current = state;
-
   const validationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -64,6 +62,8 @@ export function Field<T>(props: FieldProps<T>) {
   const pendingValidationRef = useRef<FieldState<T> | null>(null);
   const fieldRef = useRef<HTMLElement | null>(null);
   const id = useId();
+  const validationRef = useRef(validation);
+  const skipAsyncValidationOnSubmitRef = useRef(skipAsyncValidationOnSubmit);
 
   const updateState = useCallback(
     (overrides: Partial<FieldState<T>>) => {
@@ -72,13 +72,20 @@ export function Field<T>(props: FieldProps<T>) {
     [onChange],
   );
 
+  const updateStateRef = useRef(updateState);
+
+  stateRef.current = state;
+  validationRef.current = validation;
+  updateStateRef.current = updateState;
+  skipAsyncValidationOnSubmitRef.current = skipAsyncValidationOnSubmit;
+
   useEffect(() => {
     async function validateField() {
       validationIdRef.current++;
       pendingValidationRef.current = await validateFieldState<T>(
         stateRef.current,
-        validation,
-        skipAsyncValidationOnSubmit,
+        validationRef.current,
+        skipAsyncValidationOnSubmitRef.current,
       );
       return pendingValidationRef.current.isValid;
     }
@@ -87,7 +94,7 @@ export function Field<T>(props: FieldProps<T>) {
       if (pendingValidationRef.current?.isValid) {
         pendingValidationRef.current = validate(
           stateRef.current,
-          validation?.onCommit,
+          validationRef.current?.onCommit,
         );
       }
       return pendingValidationRef.current?.isValid ?? true;
@@ -95,7 +102,7 @@ export function Field<T>(props: FieldProps<T>) {
 
     function commit() {
       if (pendingValidationRef.current) {
-        updateState(pendingValidationRef.current);
+        updateStateRef.current(pendingValidationRef.current);
         pendingValidationRef.current = null;
       }
     }
@@ -122,13 +129,22 @@ export function Field<T>(props: FieldProps<T>) {
     return () => {
       deregisterField(id);
     };
+  }, [id, registerField, deregisterField]);
+
+  useEffect(() => {
+    reportFieldState?.(id, {
+      isValid: state.isValid,
+      isTouched: state.isTouched,
+      isDirty: state.isDirty,
+      isValidating: state.isValidating,
+    });
   }, [
+    reportFieldState,
     id,
-    registerField,
-    validation,
-    updateState,
-    deregisterField,
-    skipAsyncValidationOnSubmit,
+    state.isValid,
+    state.isTouched,
+    state.isDirty,
+    state.isValidating,
   ]);
 
   function clearValidationTimeout() {

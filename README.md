@@ -12,15 +12,16 @@ npm install @fransek/form
 
 `@fransek/form` is a headless form library for React. It manages field state and validation without rendering any UI — you stay in full control of markup and styling.
 
-The entire API is two components and three utilities:
+The entire API is three components and three utilities:
 
-| Export                                    | Description                                                              |
-| ----------------------------------------- | ------------------------------------------------------------------------ |
-| `<Form>`                                  | Wraps a `<form>`, coordinates submit-time validation across all fields   |
-| `<Field>`                                 | Headless field component. Manages validation lifecycle via a render prop |
-| `createFieldState(initialValue)`          | Creates the initial `FieldState` for a field                             |
-| `validate(state, validators, mode?)`      | Runs synchronous validators outside of a `<Field>`                       |
-| `validateAsync(state, validators, mode?)` | Runs async validators outside of a `<Field>`                             |
+| Export                                    | Description                                                                                       |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `<Form>`                                  | Wraps a `<form>`, coordinates submit-time validation across all fields                            |
+| `<Field>`                                 | Headless field component. Manages validation lifecycle via a render prop                          |
+| `<FormState>`                             | Reactively exposes aggregate form state (`isValid`/`isTouched`/`isDirty`/`isValidating`/`isSubmitting`/`canSubmit`) via a render prop |
+| `createFieldState(initialValue)`          | Creates the initial `FieldState` for a field                                                      |
+| `validate(state, validators, mode?)`      | Runs synchronous validators outside of a `<Field>`                                                |
+| `validateAsync(state, validators, mode?)` | Runs async validators outside of a `<Field>`                                                      |
 
 ## Quick Start
 
@@ -208,6 +209,61 @@ matching `*Dependencies` array whenever a validator also depends on external
 state and should be revalidated when that state changes. `commit` then applies
 pending validation state updates, runs `onCommit`
 validators, and optionally focuses the first invalid field.
+
+`onSubmit` may be async. When the handler returns a promise, the form's
+`isSubmitting` aggregate state (see [Aggregate Form State](#aggregate-form-state))
+is `true` while that promise is pending and resets to `false` when it settles —
+even if it rejects.
+
+## Aggregate Form State
+
+`<FormState>` reactively derives the combined state of every field in the
+surrounding `<Form>` and passes it to a render prop. It re-renders only when the
+aggregate changes — typing that doesn't flip a flag does not cause extra renders.
+
+```tsx
+import { Field, Form, FormState } from "@fransek/form";
+
+<Form
+  onSubmit={async ({ event, validate, commit }) => {
+    event.preventDefault();
+    if (await validate()) {
+      await save(); // isSubmitting is true while this runs
+    }
+    commit();
+  }}
+>
+  <Field state={name} onChange={setName} validation={{ onChange: required }}>
+    {(props) => <input {/* ... */} />}
+  </Field>
+
+  <FormState>
+    {({ canSubmit, isSubmitting }) => (
+      <button type="submit" disabled={!canSubmit}>
+        {isSubmitting ? "Submitting…" : "Submit"}
+      </button>
+    )}
+  </FormState>
+</Form>;
+```
+
+The render prop receives a `FormAggregateState`:
+
+```ts
+interface FormAggregateState {
+  isValid: boolean; // every field is valid (true when there are no fields)
+  isTouched: boolean; // at least one field has been touched
+  isDirty: boolean; // at least one field value has changed
+  isValidating: boolean; // at least one field is running async validation
+  isSubmitting: boolean; // an async onSubmit handler is in flight
+  canSubmit: boolean; // isValid && !isSubmitting && !isValidating
+}
+```
+
+`canSubmit` intentionally does **not** require the form to be dirty, so a
+pristine but valid form (e.g. one with only optional fields) is submittable.
+Compose `canSubmit && isDirty` yourself if you want to block submitting an
+unchanged form.
 
 ## Render Props
 
