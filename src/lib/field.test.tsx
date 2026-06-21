@@ -3,8 +3,7 @@ import userEvent from "@testing-library/user-event";
 import React, { useState } from "react";
 import { vi } from "vitest";
 import { Field } from "./field";
-import { FormContext } from "./form";
-import { createFieldState } from "./state-utils";
+import { FormContext } from "./form-context";
 import {
   asyncMinLengthValidator,
   asyncSpecificValueValidator,
@@ -17,6 +16,7 @@ import {
   specificValueValidator,
 } from "./test/test-utils";
 import { Validation } from "./types";
+import { createFieldState } from "./validation";
 
 describe("Field", () => {
   afterEach(() => {

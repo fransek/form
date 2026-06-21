@@ -1,44 +1,18 @@
 import React, { useCallback, useMemo, useRef } from "react";
 import { focusFirstError } from "./focus-first-error";
+import { computeAggregate, EMPTY_AGGREGATE } from "./form-aggregate";
+import {
+  FieldHooks,
+  FieldMap,
+  FormContext,
+  FormContextValue,
+} from "./form-context";
 import {
   CommitOptions,
   FieldFlags,
-  FieldHooks,
-  FieldMap,
   FormAggregateState,
-  FormContextValue,
   FormProps,
 } from "./types";
-
-const EMPTY_AGGREGATE: FormAggregateState = {
-  isValid: true,
-  isTouched: false,
-  isDirty: false,
-  isValidating: false,
-  isSubmitting: false,
-  canSubmit: true,
-};
-
-function computeAggregate(
-  flags: Map<string, FieldFlags>,
-  isSubmitting: boolean,
-): FormAggregateState {
-  let isValid = true;
-  let isTouched = false;
-  let isDirty = false;
-  let isValidating = false;
-
-  for (const field of flags.values()) {
-    if (!field.isValid) isValid = false;
-    if (field.isTouched) isTouched = true;
-    if (field.isDirty) isDirty = true;
-    if (field.isValidating) isValidating = true;
-  }
-
-  const canSubmit = isValid && !isSubmitting && !isValidating;
-
-  return { isValid, isTouched, isDirty, isValidating, isSubmitting, canSubmit };
-}
 
 /**
  * A form component that provides context for coordinating field validation.
@@ -204,16 +178,4 @@ export function Form({
       <form onSubmit={handleSubmit} {...props} />
     </FormContext.Provider>
   );
-}
-
-export const FormContext = React.createContext<FormContextValue>({
-  registerField: () => {},
-  deregisterField: () => {},
-  reportFieldState: () => {},
-  subscribe: () => () => {},
-  getAggregateSnapshot: () => EMPTY_AGGREGATE,
-});
-
-export function useFormContext() {
-  return React.useContext(FormContext);
 }

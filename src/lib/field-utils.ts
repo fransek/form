@@ -1,8 +1,14 @@
-import {
-  DependenciesByHook,
-  DependencyValidationHook,
-  Validation,
-} from "./types";
+import { Validation } from "./types";
+
+export type DependencyValidationHook =
+  | "onChange"
+  | "onBlur"
+  | "onChangeAsync"
+  | "onBlurAsync";
+
+export type DependenciesByHook = Partial<
+  Record<DependencyValidationHook, readonly unknown[]>
+>;
 
 const DEPENDENCY_VALIDATION_HOOKS: DependencyValidationHook[] = [
   "onChange",

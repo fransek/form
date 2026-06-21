@@ -5,8 +5,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { Field } from "./field";
 import { Form } from "./form";
 import { FormState } from "./form-state";
-import { createFieldState } from "./state-utils";
 import { FieldState, Validation } from "./types";
+import { createFieldState } from "./validation";
 
 interface TestFieldProps {
   testId: string;
