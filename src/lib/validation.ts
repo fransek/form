@@ -31,9 +31,22 @@ export function validate<T>(
     return state;
   }
 
-  const _validators = Array.isArray(validators) ? validators : [validators];
+  if (!Array.isArray(validators)) {
+    const errorMessage = validators?.(state.value);
+    if (errorMessage) {
+      return {
+        ...state,
+        errorMessage,
+        isDirty: true,
+        isTouched: true,
+        isValid: false,
+        isValidating: false,
+      };
+    }
+    return validState(state);
+  }
 
-  for (const validator of _validators) {
+  for (const validator of validators) {
     const errorMessage = validator?.(state.value);
     if (errorMessage) {
       return {
@@ -47,14 +60,7 @@ export function validate<T>(
     }
   }
 
-  return {
-    ...state,
-    errorMessage: undefined,
-    isDirty: true,
-    isTouched: true,
-    isValid: true,
-    isValidating: false,
-  };
+  return validState(state);
 }
 
 /**
@@ -73,10 +79,23 @@ export async function validateAsync<T>(
     return state;
   }
 
-  const _validators = Array.isArray(validators) ? validators : [validators];
+  if (!Array.isArray(validators)) {
+    const errorMessage = await validators?.(state.value);
+    if (errorMessage) {
+      return {
+        ...state,
+        errorMessage,
+        isDirty: true,
+        isTouched: true,
+        isValid: false,
+        isValidating: false,
+      };
+    }
+    return validState(state);
+  }
 
   const errorMessages = await Promise.all(
-    _validators.map((validator) => validator?.(state.value)),
+    validators.map((validator) => validator?.(state.value)),
   );
   const errorMessage = errorMessages.find(Boolean);
 
@@ -91,6 +110,19 @@ export async function validateAsync<T>(
     };
   }
 
+  return validState(state);
+}
+
+function validState<T>(state: FieldState<T>): FieldState<T> {
+  if (
+    state.errorMessage === undefined &&
+    state.isDirty &&
+    state.isTouched &&
+    state.isValid &&
+    !state.isValidating
+  ) {
+    return state;
+  }
   return {
     ...state,
     errorMessage: undefined,

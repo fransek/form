@@ -23,6 +23,7 @@ export function computeAggregate(
     if (field.isTouched) isTouched = true;
     if (field.isDirty) isDirty = true;
     if (field.isValidating) isValidating = true;
+    if (!isValid && isTouched && isDirty && isValidating) break;
   }
 
   const canSubmit = isValid && !isSubmitting && !isValidating;

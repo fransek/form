@@ -1,11 +1,11 @@
-import React from "react";
+import type { ComponentProps, ReactNode, SubmitEvent } from "react";
 
 /** Represents the state of a single form field. */
 export interface FieldState<T> {
   /** The current value of the field. */
   value: T;
   /** The error message for the field. */
-  errorMessage: React.ReactNode;
+  errorMessage: ReactNode;
   /** Whether the field has been touched by the user. */
   isTouched: boolean;
   /** Whether the value of the field has been changed by the user. */
@@ -47,7 +47,7 @@ export interface FormAggregateState {
 /** Props for the {@link FormState} component. */
 export interface FormStateProps {
   /** Render function that receives the aggregate form state. */
-  children: (state: FormAggregateState) => React.ReactNode;
+  children: (state: FormAggregateState) => ReactNode;
 }
 
 /** Props passed to the render function of a {@link Field} component. */
@@ -109,7 +109,7 @@ export interface FieldProps<T> {
   /** The current state of the field, created with {@link createFieldState}. */
   state: FieldState<T>;
   /** Render function that receives field state and event handlers. */
-  children: (props: FieldRenderProps<T>) => React.ReactNode;
+  children: (props: FieldRenderProps<T>) => ReactNode;
   /** Callback invoked with the updated field state whenever the state changes. */
   onChange: (newState: FieldState<T>) => void;
   /** Validator functions to run on various field events. */
@@ -123,9 +123,9 @@ export interface FieldProps<T> {
 }
 
 /** A synchronous validator function. Returns an error message if validation fails, or a falsy value if it passes. */
-export type SyncValidator<T> = (value: T) => React.ReactNode;
+export type SyncValidator<T> = (value: T) => ReactNode;
 /** An asynchronous validator function. Resolves with an error message if validation fails, or a falsy value if it passes. */
-export type AsyncValidator<T> = (value: T) => Promise<React.ReactNode>;
+export type AsyncValidator<T> = (value: T) => Promise<ReactNode>;
 /** A synchronous or asynchronous validator function. */
 export type Validator<T> = SyncValidator<T> | AsyncValidator<T>;
 
@@ -137,10 +137,7 @@ export interface CommitOptions {
 }
 
 /** Props for the {@link Form} component. */
-export interface FormProps extends Omit<
-  React.ComponentProps<"form">,
-  "onSubmit"
-> {
+export interface FormProps extends Omit<ComponentProps<"form">, "onSubmit"> {
   /** Default validation mode applied to all fields in the form. Defaults to `"touchedAndDirty"`. */
   validationMode?: ValidationMode;
   /** Default debounce delay in milliseconds for async validators. Defaults to `500`. */
@@ -152,7 +149,7 @@ export interface FormProps extends Omit<
 }
 
 export type SubmitContext = {
-  event: React.SubmitEvent<HTMLFormElement>;
+  event: SubmitEvent<HTMLFormElement>;
   /** Runs submit-time validation for all registered fields without committing validation state changes. Returns `true` if all fields are valid. */
   validate: () => Promise<boolean>;
   /** Runs `onCommit` validations and commits pending validation state changes. */

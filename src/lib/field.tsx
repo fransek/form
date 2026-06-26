@@ -185,7 +185,7 @@ export function Field<T>(props: FieldProps<T>) {
         clearValidationTimeout();
       }
 
-      updateState({
+      updateStateRef.current({
         errorMessage,
         isValid: !errorMessage,
         isValidating: willValidateAsync,
@@ -203,7 +203,7 @@ export function Field<T>(props: FieldProps<T>) {
       isValidatingOnChangeRef.current = false;
 
       if (currentValidation === validationIdRef.current) {
-        updateState({
+        updateStateRef.current({
           errorMessage: asyncErrorMessage,
           isValid: !asyncErrorMessage,
           isValidating: isValidatingOnBlurRef.current,
@@ -221,7 +221,7 @@ export function Field<T>(props: FieldProps<T>) {
       return;
     }
     void runDependencyValidation(changedHooks);
-  }, [validation, validationMode, updateState]);
+  }, [validation, validationMode]);
 
   useEffect(() => {
     return () => {
@@ -305,7 +305,7 @@ export function Field<T>(props: FieldProps<T>) {
     isValidatingOnBlurRef.current = true;
     updateState({ isValidating: true, isTouched: true });
 
-    const asyncValidations: Promise<React.ReactNode>[] = [];
+    const asyncValidations: Promise<ReactNode>[] = [];
 
     if (validation?.onBlurAsync) {
       asyncValidations.push(validation.onBlurAsync(stateRef.current.value));

@@ -1,4 +1,4 @@
-import React from "react";
+import { createContext, useContext } from "react";
 import { EMPTY_AGGREGATE } from "./form-aggregate";
 import { FieldFlags, FormAggregateState, ValidationMode } from "./types";
 
@@ -31,7 +31,7 @@ export interface FormContextValue {
   getAggregateSnapshot: () => FormAggregateState;
 }
 
-export const FormContext = React.createContext<FormContextValue>({
+export const FormContext = createContext<FormContextValue>({
   registerField: () => {},
   deregisterField: () => {},
   reportFieldState: () => {},
@@ -40,5 +40,5 @@ export const FormContext = React.createContext<FormContextValue>({
 });
 
 export function useFormContext() {
-  return React.useContext(FormContext);
+  return useContext(FormContext);
 }

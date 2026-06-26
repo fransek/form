@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Validation } from "./types";
 
 export type DependencyValidationHook =
@@ -56,7 +57,7 @@ export function getChangedDependencyHooks(
 
 export function getSyncValidationError<T>(
   value: T,
-  validators: Array<((value: T) => React.ReactNode) | undefined>,
+  validators: Array<((value: T) => ReactNode) | undefined>,
 ) {
   for (const validator of validators) {
     const error = validator?.(value);
@@ -68,7 +69,7 @@ export function getSyncValidationError<T>(
 
 export async function getAsyncValidationError<T>(
   value: T,
-  validators: Array<((value: T) => Promise<React.ReactNode>) | undefined>,
+  validators: Array<((value: T) => Promise<ReactNode>) | undefined>,
 ) {
   const errors = await Promise.all(
     validators.map((validator) => validator?.(value)),

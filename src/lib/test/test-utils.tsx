@@ -1,6 +1,6 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import React, { useState } from "react";
+import { useState } from "react";
 import { Field } from "../field";
 import { Validation, ValidationMode } from "../types";
 import { createFieldState } from "../validation";

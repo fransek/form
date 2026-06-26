@@ -1,6 +1,6 @@
 import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import React, { useState } from "react";
+import { useState } from "react";
 import { vi } from "vitest";
 import { Field } from "./field";
 import { FormContext } from "./form-context";

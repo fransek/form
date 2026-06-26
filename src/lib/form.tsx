@@ -1,4 +1,5 @@
-import React, { useCallback, useMemo, useRef } from "react";
+import type { SubmitEvent } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { focusFirstError } from "./focus-first-error";
 import { computeAggregate, EMPTY_AGGREGATE } from "./form-aggregate";
 import {
@@ -136,7 +137,8 @@ export function Form({
   }, [getFields]);
 
   const handleSubmit = useCallback(
-    async (event: React.SubmitEvent<HTMLFormElement>) => {
+    async (event: SubmitEvent<HTMLFormElement>) => {
+      event.preventDefault();
       const result = onSubmit?.({ event, validate, commit, cancel });
       if (result instanceof Promise) {
         setIsSubmitting(true);
