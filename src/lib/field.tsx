@@ -77,6 +77,10 @@ export function Field<T>(props: FieldProps<T>) {
 
   useEffect(() => {
     async function validateField() {
+      // Submit-time validation supersedes any pending or in-flight
+      // change validation; their results will be discarded.
+      clearValidationTimeout();
+      isValidatingOnChangeRef.current = false;
       validationIdRef.current++;
       pendingValidationRef.current = await validateFieldState<T>(
         stateRef.current,
@@ -97,10 +101,21 @@ export function Field<T>(props: FieldProps<T>) {
     }
 
     function commit() {
-      if (pendingValidationRef.current) {
-        updateStateRef.current(pendingValidationRef.current);
-        pendingValidationRef.current = null;
+      const pending = pendingValidationRef.current;
+      if (!pending) {
+        return;
       }
+      pendingValidationRef.current = null;
+      // Apply only the validation result on top of the current state, so
+      // values entered while validation was pending are not reverted.
+      updateStateRef.current({
+        errorMessage: pending.errorMessage,
+        isValid: pending.isValid,
+        isTouched: pending.isTouched,
+        isDirty: pending.isDirty,
+        isValidating:
+          isValidatingOnChangeRef.current || isValidatingOnBlurRef.current,
+      });
     }
 
     function getRef() {
@@ -108,10 +123,9 @@ export function Field<T>(props: FieldProps<T>) {
     }
 
     function cancel() {
-      if (validationTimeoutRef.current) {
-        clearValidationTimeout();
-      }
+      clearValidationTimeout();
       pendingValidationRef.current = null;
+      settleIsValidating();
     }
 
     registerField(id, {
@@ -152,6 +166,20 @@ export function Field<T>(props: FieldProps<T>) {
     isValidatingOnChangeRef.current = false;
   }
 
+  /**
+   * Resets `isValidating` when no validation that could still update the
+   * field is in flight, e.g. after a superseded async result is discarded.
+   */
+  function settleIsValidating() {
+    if (
+      stateRef.current.isValidating &&
+      !isValidatingOnChangeRef.current &&
+      !isValidatingOnBlurRef.current
+    ) {
+      updateStateRef.current({ isValidating: false });
+    }
+  }
+
   useEffect(() => {
     function getChangedHooks() {
       const currentDependenciesByHook = getDependenciesByHook(validation);
@@ -169,6 +197,8 @@ export function Field<T>(props: FieldProps<T>) {
     ) {
       const value = stateRef.current.value;
       const currentValidation = ++validationIdRef.current;
+      // Any in-flight change validation is superseded by this run.
+      isValidatingOnChangeRef.current = false;
       const syncValidators = getSyncValidators<T>(changedHooks, validation);
       const asyncValidators = getAsyncValidators<T>(changedHooks, validation);
       const hasSyncValidators = syncValidators.some(Boolean);
@@ -200,15 +230,18 @@ export function Field<T>(props: FieldProps<T>) {
         value,
         asyncValidators,
       );
-      isValidatingOnChangeRef.current = false;
 
-      if (currentValidation === validationIdRef.current) {
-        updateState({
-          errorMessage: asyncErrorMessage,
-          isValid: !asyncErrorMessage,
-          isValidating: isValidatingOnBlurRef.current,
-        });
+      if (currentValidation !== validationIdRef.current) {
+        settleIsValidating();
+        return;
       }
+
+      isValidatingOnChangeRef.current = false;
+      updateState({
+        errorMessage: asyncErrorMessage,
+        isValid: !asyncErrorMessage,
+        isValidating: isValidatingOnBlurRef.current,
+      });
     }
 
     const changedHooks = getChangedHooks();
@@ -253,14 +286,17 @@ export function Field<T>(props: FieldProps<T>) {
     validationTimeoutRef.current = setTimeout(async () => {
       const asyncErrorMessage = await validation?.onChangeAsync?.(value);
 
-      isValidatingOnChangeRef.current = false;
-      if (currentValidation === validationIdRef.current) {
-        updateState({
-          errorMessage: asyncErrorMessage,
-          isValid: !asyncErrorMessage,
-          isValidating: isValidatingOnBlurRef.current,
-        });
+      if (currentValidation !== validationIdRef.current) {
+        settleIsValidating();
+        return;
       }
+
+      isValidatingOnChangeRef.current = false;
+      updateState({
+        errorMessage: asyncErrorMessage,
+        isValid: !asyncErrorMessage,
+        isValidating: isValidatingOnBlurRef.current,
+      });
     }, debounceMs);
   }
 
