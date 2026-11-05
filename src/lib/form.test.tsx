@@ -338,3 +338,166 @@ describe("Form", () => {
     });
   });
 });
+
+describe("Form submit with in-flight validation", () => {
+  beforeEach(() => {
+    vi.spyOn(window, "scrollTo").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  function deferred<T>() {
+    let resolve!: (value: T) => void;
+    const promise = new Promise<T>((r) => (resolve = r));
+    return { promise, resolve };
+  }
+
+  function SubmitHarness({
+    onSubmit,
+    validation,
+  }: {
+    onSubmit: React.ComponentProps<typeof Form>["onSubmit"];
+    validation: React.ComponentProps<typeof Field<string>>["validation"];
+  }) {
+    const [state, setState] = useState(createFieldState(""));
+    return (
+      <Form onSubmit={onSubmit}>
+        <Field
+          state={state}
+          onChange={setState}
+          validation={validation}
+          validationMode="dirty"
+          debounceMs={10}
+        >
+          {({
+            value,
+            handleChange,
+            handleBlur,
+            ref,
+            isValidating,
+            errorMessage,
+          }) => (
+            <input
+              data-testid="input"
+              value={value}
+              ref={ref}
+              onChange={(e) => handleChange(e.target.value)}
+              onBlur={handleBlur}
+              data-isvalidating={isValidating}
+              data-errormessage={errorMessage}
+            />
+          )}
+        </Field>
+        <button type="submit">Submit</button>
+      </Form>
+    );
+  }
+
+  it("should not revert values entered while failing submit validation is pending", async () => {
+    const user = userEvent.setup();
+    const submitValidation = deferred<string>();
+
+    render(
+      <SubmitHarness
+        validation={{ onSubmitAsync: () => submitValidation.promise }}
+        onSubmit={async ({ event, validate, commit }) => {
+          event.preventDefault();
+          await validate();
+          commit({ focusFirstError: false });
+        }}
+      />,
+    );
+
+    const input = screen.getByTestId("input");
+    await user.type(input, "a");
+    await user.click(screen.getByRole("button", { name: "Submit" }));
+    await user.type(input, "bc");
+
+    submitValidation.resolve("Invalid");
+
+    await waitFor(() => {
+      expect(input).toHaveAttribute("data-errormessage", "Invalid");
+    });
+    expect(input).toHaveValue("abc");
+  });
+
+  it("should reset isValidating when cancelling after validate supersedes an in-flight async validation", async () => {
+    const user = userEvent.setup();
+    const changeValidation = deferred<undefined>();
+    const onChangeAsync = vi.fn(() => changeValidation.promise);
+
+    render(
+      <SubmitHarness
+        validation={{ onChangeAsync }}
+        onSubmit={async ({ event, validate, cancel }) => {
+          event.preventDefault();
+          const result = validate();
+          changeValidation.resolve(undefined);
+          await result;
+          cancel();
+        }}
+      />,
+    );
+
+    const input = screen.getByTestId("input");
+    await user.type(input, "a");
+    await waitFor(() => expect(onChangeAsync).toHaveBeenCalled());
+    expect(input).toHaveAttribute("data-isvalidating", "true");
+
+    await user.click(screen.getByRole("button", { name: "Submit" }));
+
+    await waitFor(() => {
+      expect(input).toHaveAttribute("data-isvalidating", "false");
+    });
+  });
+
+  it("should reset isValidating when cancelling before a debounced async validation runs", async () => {
+    const user = userEvent.setup();
+    const onChangeAsync = vi.fn(async () => undefined);
+
+    function SlowDebounce() {
+      const [state, setState] = useState(createFieldState(""));
+      return (
+        <Form
+          onSubmit={({ event, cancel }) => {
+            event.preventDefault();
+            cancel();
+          }}
+        >
+          <Field
+            state={state}
+            onChange={setState}
+            validation={{ onChangeAsync }}
+            validationMode="dirty"
+            debounceMs={10_000}
+          >
+            {({ value, handleChange, isValidating }) => (
+              <input
+                data-testid="input"
+                value={value}
+                onChange={(e) => handleChange(e.target.value)}
+                data-isvalidating={isValidating}
+              />
+            )}
+          </Field>
+          <button type="submit">Submit</button>
+        </Form>
+      );
+    }
+
+    render(<SlowDebounce />);
+
+    const input = screen.getByTestId("input");
+    await user.type(input, "a");
+    expect(input).toHaveAttribute("data-isvalidating", "true");
+
+    await user.click(screen.getByRole("button", { name: "Submit" }));
+
+    await waitFor(() => {
+      expect(input).toHaveAttribute("data-isvalidating", "false");
+    });
+    expect(onChangeAsync).not.toHaveBeenCalled();
+  });
+});
